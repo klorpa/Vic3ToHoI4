@@ -7,6 +7,7 @@
 
 #include "external/commonItems/Color.h"
 #include "external/commonItems/CommonRegexes.h"
+#include "external/commonItems/Date.h"
 #include "external/commonItems/Log.h"
 #include "external/commonItems/ModLoader/Mod.h"
 #include "external/commonItems/ModLoader/ModLoader.h"
@@ -14,11 +15,16 @@
 #include "external/commonItems/ParserHelpers.h"
 #include "external/fmt/include/fmt/format.h"
 #include "external/rakaly/rakaly.h"
+#include "src/support/date_fmt.h"
 #include "src/vic3_world/countries/country_definitions_importer.h"
 #include "src/vic3_world/countries/vic3_countries_importer.h"
 #include "src/vic3_world/countries/vic3_country.h"
+#include "src/vic3_world/country_rankings/country_rankings.h"
+#include "src/vic3_world/country_rankings/country_rankings_importer.h"
+#include "src/vic3_world/laws/laws_importer.h"
 #include "src/vic3_world/provinces/vic3_province_definitions.h"
 #include "src/vic3_world/provinces/vic3_province_definitions_loader.h"
+#include "src/vic3_world/states/state_regions_importer.h"
 #include "src/vic3_world/states/vic3_state.h"
 #include "src/vic3_world/states/vic3_states_importer.h"
 #include "src/vic3_world/technology/vic3_technology_importer.h"
@@ -39,9 +45,10 @@ std::string ReadSave(std::string_view save_filename)
 }
 
 
-std::vector<std::string> ReadModNames(const rakaly::GameFile& save, const std::string& save_string)
+std::istringstream GetSaveMeta(const rakaly::GameFile& save, const std::string& save_string)
 {
    std::string save_meta;
+
    if (save.is_binary())
    {
       const auto melt = save.meltMeta();
@@ -56,25 +63,13 @@ std::vector<std::string> ReadModNames(const rakaly::GameFile& save, const std::s
    {
       save_meta = save_string;
    }
-   std::istringstream meta_stream{save_meta};
 
-   std::vector<std::string> mod_names;
-
-   commonItems::parser meta_parser;
-   meta_parser.registerKeyword("mods", [&mod_names](std::istream& input_stream) {
-      mod_names = commonItems::stringList(input_stream).getStrings();
-   });
-   meta_parser.IgnoreUnregisteredItems();
-   meta_parser.parseStream(meta_stream);
-
-   return mod_names;
+   return std::istringstream{save_meta};
 }
 
 
-std::vector<Mod> GetModsFromSave(const rakaly::GameFile& save, const std::string& save_string)
+std::vector<Mod> GetModsFromSave(const std::vector<std::string>& mod_names)
 {
-   std::vector<std::string> mod_names = ReadModNames(save, save_string);
-
    std::vector<Mod> mods;
    for (const auto& mod_name: mod_names)
    {
@@ -138,13 +133,44 @@ vic3::World vic3::ImportWorld(const configuration::Configuration& configuration)
    std::string save_string = ReadSave(configuration.save_game);
    const rakaly::GameFile save = rakaly::parseVic3(save_string);
 
+   std::istringstream meta_stream = GetSaveMeta(save, save_string);
+
+   Log(LogLevel::Info) << "-> Reading Vic3 save metadata.";
+   std::vector<std::string> mod_names;
+
+   commonItems::parser meta_parser;
+   meta_parser.registerKeyword("game_date", [&mod_names](std::istream& input_stream) {
+      date game_date(commonItems::getString(input_stream));
+      Log(LogLevel::Info) << fmt::format("Converting at {}.", game_date);
+   });
+   meta_parser.registerKeyword("mods", [&mod_names](std::istream& input_stream) {
+      mod_names = commonItems::stringList(input_stream).getStrings();
+   });
+   meta_parser.IgnoreUnregisteredItems();
+   meta_parser.parseStream(meta_stream);
+
+   Log(LogLevel::Info) << "-> Loading Vic3 mods.";
    commonItems::ModLoader mod_loader;
    mod_loader.loadMods(std::vector<std::string>{configuration.vic3_mod_path, configuration.vic3_steam_mod_path},
-       GetModsFromSave(save, save_string));
+       GetModsFromSave(mod_names));
 
    Log(LogLevel::Info) << "-> Reading Vic3 install.";
-   commonItems::ModFilesystem mod_filesystem(configuration.vic3_directory, mod_loader.getMods());
-   const auto province_definitions = ProvinceDefinitionsLoader().LoadProvinceDefinitions(mod_filesystem);
+   commonItems::ModFilesystem mod_filesystem(fmt::format("{}/game", configuration.vic3_directory),
+       mod_loader.getMods());
+   const auto province_definitions = LoadProvinceDefinitions(mod_filesystem);
+   const auto state_regions = ImportStateRegions(mod_filesystem);
+   commonItems::LocalizationDatabase localizations("english",
+       {"braz_por",
+           "french",
+           "german",
+           "japanese",
+           "korean",
+           "polish",
+           "russian",
+           "simp_chinese",
+           "spanish",
+           "turkish"});
+   localizations.ScrapeLocalizations(mod_filesystem, "localization");
    Log(LogLevel::Progress) << "5 %";
 
    Log(LogLevel::Info) << "-> Reading Vic3 save.";
@@ -152,24 +178,35 @@ vic3::World vic3::ImportWorld(const configuration::Configuration& configuration)
    std::istringstream save_stream = MeltSave(save, save_string);
 
    Log(LogLevel::Info) << "-> Processing Vic3 save.";
-   StatesImporter states_importer;
-   std::map<int, State> states;
-
    const std::map<std::string, commonItems::Color> color_definitions = ImportCountryColorDefinitions(mod_filesystem);
-   CountriesImporter countries_importer(color_definitions);
    std::map<int, Country> countries;
-
+   std::map<int, State> states;
    std::map<int, std::set<std::string>> acquired_technologies;
+   CountryRankings country_rankings;
 
    commonItems::parser save_parser;
-   save_parser.registerKeyword("country_manager", [&countries, &countries_importer](std::istream& input_stream) {
-      countries = countries_importer.ImportCountries(input_stream);
+   save_parser.registerKeyword("country_manager", [&countries, color_definitions](std::istream& input_stream) {
+      countries = ImportCountries(color_definitions, input_stream);
    });
-   save_parser.registerKeyword("states", [&states, &states_importer](std::istream& input_stream) {
-      states = states_importer.ImportStates(input_stream);
+   save_parser.registerKeyword("states", [&states](std::istream& input_stream) {
+      states = ImportStates(input_stream);
    });
    save_parser.registerKeyword("technology", [&acquired_technologies](std::istream& input_stream) {
       acquired_technologies = ImportAcquiredTechnologies(input_stream);
+   });
+   save_parser.registerKeyword("country_rankings", [&country_rankings](std::istream& input_stream) {
+      country_rankings = ImportCountryRankings(input_stream);
+   });
+   save_parser.registerKeyword("laws", [&countries](std::istream& input_stream) {
+      for (const auto& [country_number, active_laws]: ImportLaws(input_stream))
+      {
+         auto country_itr = countries.find(country_number);
+         if (country_itr == countries.end())
+         {
+            continue;
+         }
+         country_itr->second.SetActiveLaws(active_laws);
+      }
    });
    save_parser.registerRegex("SAV.*", [](const std::string& unused, std::istream& input_stream) {
    });
@@ -185,6 +222,9 @@ vic3::World vic3::ImportWorld(const configuration::Configuration& configuration)
 
    return World({.countries = countries,
        .states = states,
+       .state_regions = state_regions,
        .province_definitions = province_definitions,
-       .acquired_technologies = acquired_technologies});
+       .acquired_technologies = acquired_technologies,
+       .country_rankings = country_rankings,
+       .localizations = localizations});
 }

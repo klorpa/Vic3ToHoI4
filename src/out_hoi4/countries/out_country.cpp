@@ -5,6 +5,7 @@
 
 #include "external/commonItems/OSCompatibilityLayer.h"
 #include "external/fmt/include/fmt/format.h"
+#include "src/out_hoi4/military/out_equipment_variant.h"
 #include "src/out_hoi4/technology/out_technologies.h"
 
 
@@ -49,31 +50,66 @@ void out::OutputCountryHistory(std::string_view output_name, const hoi4::Country
    {
       country_history << fmt::format("capital = {}\n", *capital);
    }
-
+   country_history << "\n";
+   country_history << fmt::format("oob = \"{}_1936\"", country.GetTag());
+   country_history << "\n";
    country_history << "set_research_slots = 3\n";
    country_history << "set_convoys = 0\n";
    country_history << "\n";
    country_history << "set_politics = {\n";
-   country_history << "\truling_party = neutrality\n";
+   country_history << fmt::format("\truling_party = {}\n", country.GetIdeology());
    country_history << "\tlast_election = \"1836.1.1\"\n";
-   country_history << "election_frequency = 48\n";
-   country_history << "elections_allowed = no\n";
+   country_history << "\telection_frequency = 48\n";
+   country_history << "\telections_allowed = no\n";
    country_history << "}\n";
    country_history << "\n";
    country_history << "set_popularities = {\n";
-   country_history << "\tneutrality = 100\n";
+   country_history << fmt::format("\t{} = 100\n", country.GetIdeology());
    country_history << "}\n";
    country_history << "\n";
    country_history << "add_ideas = {\n";
    country_history << "\tlimited_conscription\n";
    country_history << "\tcivilian_economy\n";
    country_history << "\texport_focus\n";
+   for (const std::string& idea: country.GetIdeas())
+   {
+      country_history << fmt::format("\t{}\n", idea);
+   }
    country_history << "}\n";
    country_history << "set_stability = 0.60\n";
    country_history << "set_war_support = 0.60\n";
    country_history << "\n";
 
    country_history << country.GetTechnologies();
+
+   country_history << "if = {\n";
+   country_history << "\tlimit = { not = { has_dlc = \"Man the Guns\" } }\n";
+   for (const auto& variant: country.GetLegacyShipVariants())
+   {
+      country_history << variant;
+   }
+   country_history << "}\n";
+   country_history << "if = {\n";
+   country_history << "\tlimit = { has_dlc = \"Man the Guns\" }\n";
+   for (const auto& variant: country.GetShipVariants())
+   {
+      country_history << variant;
+   }
+   country_history << "}\n";
+   country_history << "if = {\n";
+   country_history << "\tlimit = { has_dlc = \"By Blood Alone\" }\n";
+   for (const auto& variant: country.GetPlaneVariants())
+   {
+      country_history << variant;
+   }
+   country_history << "}\n";
+   country_history << "if = {\n";
+   country_history << "\tlimit = { has_dlc = \"No Step Back\" }\n";
+   for (const auto& variant: country.GetTankVariants())
+   {
+      country_history << variant;
+   }
+   country_history << "}\n";
 
    country_history.close();
 }

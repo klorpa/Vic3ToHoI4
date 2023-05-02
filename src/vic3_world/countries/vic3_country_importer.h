@@ -19,7 +19,8 @@ class CountryImporter
   public:
    CountryImporter();
 
-   [[nodiscard]] Country ImportCountry(std::istream& input_stream,
+   [[nodiscard]] Country ImportCountry(int number,
+       std::istream& input_stream,
        const std::map<std::string, commonItems::Color>& color_definitions);
 
   private:
@@ -27,6 +28,7 @@ class CountryImporter
 
    std::string tag_;
    std::optional<int> capital_;
+   std::string country_type_;
 };
 
 }  // namespace vic3

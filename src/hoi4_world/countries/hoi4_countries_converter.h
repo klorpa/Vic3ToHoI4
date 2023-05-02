@@ -4,9 +4,11 @@
 
 
 #include <map>
+#include <vector>
 
 #include "src/hoi4_world/countries/hoi4_country.h"
 #include "src/hoi4_world/countries/hoi4_country_converter.h"
+#include "src/hoi4_world/states/hoi4_state.h"
 #include "src/vic3_world/countries/vic3_country.h"
 
 
@@ -14,18 +16,12 @@
 namespace hoi4
 {
 
-class CountriesConverter
-{
-  public:
-   std::map<std::string, Country> ConvertCountries(const std::map<int, vic3::Country>& source_countries,
-       const std::map<int, std::set<std::string>>& source_technologies,
-       const mappers::CountryMapper& country_mapper,
-       const std::map<int, int>& vic3_state_ids_to_hoi4_state_ids,
-       const std::vector<mappers::TechMapping>& tech_mappings);
-
-  private:
-   CountryConverter country_converter_;
-};
+std::map<std::string, Country> ConvertCountries(const std::map<int, vic3::Country>& source_countries,
+    const std::map<int, std::set<std::string>>& source_technologies,
+    const mappers::CountryMapper& country_mapper,
+    const std::map<int, int>& vic3_state_ids_to_hoi4_state_ids,
+    const std::vector<State>& states,
+    const std::vector<mappers::TechMapping>& tech_mappings);
 
 }  // namespace hoi4
 

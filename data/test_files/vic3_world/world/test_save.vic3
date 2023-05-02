@@ -1,5 +1,6 @@
 SAV01020000000000000000
 meta_data={
+	game_date=1923.6.10.12
 	mods={ "Test Mod" "Test Mod Two" }
 }
 
@@ -46,6 +47,34 @@ technology={
 3={
 	country=3
 	acquired_technologies={ technology_three }
+}
+	}
+}
+country_rankings={
+	average_prestige=170
+	highest_prestige=5544
+	country_rankings={ {
+			rank=great_power			target=great_power			prestige=2034
+			score=3
+			country=1
+		}
+ {
+			rank=major_power			target=major_power			prestige=697
+			score=8
+			country=9
+			date=1921.2.18
+		}
+ }
+}
+laws={
+	database={
+0={
+	law=law_chiefdom	country=1
+}
+1={
+	law=law_monarchy	country=1
+	active=yes
+	activation_date=1836.1.1
 }
 	}
 }

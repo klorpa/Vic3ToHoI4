@@ -14,15 +14,20 @@ vic3::CountryImporter::CountryImporter()
    country_parser_.registerKeyword("capital", [this](std::istream& input_stream) {
       capital_ = commonItems::getInt(input_stream);
    });
+   country_parser_.registerKeyword("country_type", [this](std::istream& input_stream) {
+      country_type_ = commonItems::getString(input_stream);
+   });
    country_parser_.IgnoreUnregisteredItems();
 }
 
 
-vic3::Country vic3::CountryImporter::ImportCountry(std::istream& input_stream,
+vic3::Country vic3::CountryImporter::ImportCountry(int number,
+    std::istream& input_stream,
     const std::map<std::string, commonItems::Color>& color_definitions)
 {
    tag_.clear();
    capital_ = std::nullopt;
+   country_type_.clear();
 
    country_parser_.parseStream(input_stream);
 
@@ -32,5 +37,6 @@ vic3::Country vic3::CountryImporter::ImportCountry(std::istream& input_stream,
       color = color_itr->second;
    }
 
-   return Country({.tag = tag_, .color = color, .capital_state = capital_});
+   return Country(
+       {.number = number, .tag = tag_, .color = color, .capital_state = capital_, .country_type = country_type_});
 }

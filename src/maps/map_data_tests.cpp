@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "external/commonItems/ModLoader/ModFilesystem.h"
 #include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
 #include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
@@ -15,18 +17,15 @@ class MapsMapdata: public ::testing::Test
    static void SetUpTestSuite()
    {
       const commonItems::ModFilesystem mod_filesystem("test_files/maps", {});
-      const maps::ProvinceDefinitions province_definitions({},
-          {},
-          {},
-          {
-              {0x88'00'15, "1"},  // the dark red one on top
-              {0xED'1C'24, "2"},  // the red red one on the left
-              {0x22'B1'4C, "3"},  // the green one in the middle
-              {0xFF'7F'27, "4"},  // the orange one on the right
-              {0xFF'F2'00, "5"},  // the yellow red one below
-              {0x3F'48'CC, "6"},  // the indigo one on the far right
-              {0xA3'49'A4, "7"},  // the purple one on the far right
-          });
+      const maps::ProvinceDefinitions province_definitions({.color_to_province_map = {
+                                                                {0x88'00'15, "1"},  // the dark red one on top
+                                                                {0xED'1C'24, "2"},  // the red red one on the left
+                                                                {0x22'B1'4C, "3"},  // the green one in the middle
+                                                                {0xFF'7F'27, "4"},  // the orange one on the right
+                                                                {0xFF'F2'00, "5"},  // the yellow red one below
+                                                                {0x3F'48'CC, "6"},  // the indigo one on the far right
+                                                                {0xA3'49'A4, "7"},  // the purple one on the far right
+                                                            }});
       maps::MapDataImporter importer(province_definitions);
 
       map_data = importer.ImportMapData(mod_filesystem);
@@ -36,7 +35,7 @@ class MapsMapdata: public ::testing::Test
 };
 
 
-maps::MapData MapsMapdata::map_data{{}, {}, {}, {{}, {}, {}, {}}, {}};
+maps::MapData MapsMapdata::map_data;
 
 }  // namespace
 
@@ -44,7 +43,7 @@ maps::MapData MapsMapdata::map_data{{}, {}, {}, {{}, {}, {}, {}}, {}};
 TEST_F(MapsMapdata, ExceptionThrownForMissingProvincesBmp)
 {
    const commonItems::ModFilesystem mod_filesystem("", {});
-   const maps::ProvinceDefinitions province_definitions({}, {}, {}, {});
+   const maps::ProvinceDefinitions province_definitions;
    maps::MapDataImporter importer(province_definitions);
 
    EXPECT_THROW(importer.ImportMapData(mod_filesystem), std::runtime_error);
@@ -54,7 +53,7 @@ TEST_F(MapsMapdata, ExceptionThrownForMissingProvincesBmp)
 TEST_F(MapsMapdata, ExceptionThrownForMissingAdjacenciesCsv)
 {
    const commonItems::ModFilesystem mod_filesystem("test_files/maps/nocsv", {});
-   const maps::ProvinceDefinitions province_definitions({}, {}, {}, {});
+   const maps::ProvinceDefinitions province_definitions;
    maps::MapDataImporter importer(province_definitions);
 
    EXPECT_THROW(importer.ImportMapData(mod_filesystem), std::runtime_error);
@@ -107,6 +106,22 @@ TEST_F(MapsMapdata, AnyBordersCanBeLookedUp)
 
    constexpr maps::Point expected_point{13, 590};  // y-axis is from the bottom
    EXPECT_EQ(*border_point, expected_point);
+}
+
+
+TEST_F(MapsMapdata, CentralPointCanBeLookedUp)
+{
+   const auto central_point = map_data.GetCentermostPoint("3");
+
+   EXPECT_EQ(central_point, std::make_optional(maps::Point{13, 586}));
+}
+
+
+TEST_F(MapsMapdata, NulloptForNoCentralPoint)
+{
+   const auto central_point = map_data.GetCentermostPoint("42");
+
+   EXPECT_EQ(central_point, std::nullopt);
 }
 
 
