@@ -70,7 +70,7 @@ TEST(Outhoi4StatesState, BasicsAreOutput)
        "\n"
        "\thistory = {\n"
        "\t\tbuildings = {\n"
-       "\t\t\tinfrastructure = 2\n"
+       "\t\t\tinfrastructure = 1\n"
        "\t\t\tindustrial_complex = 0\n"
        "\t\t\tarms_factory = 0\n"
        "\t\t}\n"
@@ -422,7 +422,11 @@ TEST(Outhoi4StatesState, BuildingsAreOutput)
    commonItems::TryCreateFolder("output/BuildingsAreOutput/history/states");
 
    const hoi4::State state_one(1,
-       {.provinces = {1, 4, 9, 16}, .civilian_factories = 2, .military_factories = 4, .dockyards = 6});
+       {.provinces = {1, 4, 9, 16},
+           .civilian_factories = 2,
+           .military_factories = 4,
+           .dockyards = 6,
+           .air_base_level = 1});
 
    OutputState("BuildingsAreOutput", state_one);
 
@@ -437,10 +441,11 @@ TEST(Outhoi4StatesState, BuildingsAreOutput)
    EXPECT_THAT(state_file_stream.str(),
        testing::HasSubstr("\thistory = {\n"
                           "\t\tbuildings = {\n"
-                          "\t\t\tinfrastructure = 2\n"
+                          "\t\t\tinfrastructure = 1\n"
                           "\t\t\tindustrial_complex = 2\n"
                           "\t\t\tarms_factory = 4\n"
                           "\t\t\tdockyard = 6\n"
+                          "\t\t\tair_base = 1\n"
                           "\t\t}\n"
                           "\t}\n"));
 }
@@ -454,7 +459,11 @@ TEST(Outhoi4StatesState, DockyardsNotOutputWhenZero)
    commonItems::TryCreateFolder("output/DockyardsNotOutputWhenZero/history/states");
 
    const hoi4::State state_one(1,
-       {.provinces = {1, 4, 9, 16}, .civilian_factories = 2, .military_factories = 4, .dockyards = 0});
+       {.provinces = {1, 4, 9, 16},
+           .civilian_factories = 2,
+           .military_factories = 4,
+           .dockyards = 0,
+           .air_base_level = 1});
 
    OutputState("DockyardsNotOutputWhenZero", state_one);
 
@@ -469,9 +478,46 @@ TEST(Outhoi4StatesState, DockyardsNotOutputWhenZero)
    EXPECT_THAT(state_file_stream.str(),
        testing::HasSubstr("\thistory = {\n"
                           "\t\tbuildings = {\n"
-                          "\t\t\tinfrastructure = 2\n"
+                          "\t\t\tinfrastructure = 1\n"
                           "\t\t\tindustrial_complex = 2\n"
                           "\t\t\tarms_factory = 4\n"
+                          "\t\t\tair_base = 1\n"
+                          "\t\t}\n"
+                          "\t}\n"));
+}
+
+
+TEST(Outhoi4StatesState, AirBasesNotOutputWhenZero)
+{
+   commonItems::TryCreateFolder("output");
+   commonItems::TryCreateFolder("output/BuildingsAreOutput");
+   commonItems::TryCreateFolder("output/BuildingsAreOutput/history");
+   commonItems::TryCreateFolder("output/BuildingsAreOutput/history/states");
+
+   const hoi4::State state_one(1,
+       {.provinces = {1, 4, 9, 16},
+           .civilian_factories = 2,
+           .military_factories = 4,
+           .dockyards = 6,
+           .air_base_level = 0});
+
+   OutputState("BuildingsAreOutput", state_one);
+
+   ASSERT_TRUE(commonItems::DoesFileExist("output/BuildingsAreOutput/history/states/1.txt"));
+   std::ifstream state_file("output/BuildingsAreOutput/history/states/1.txt");
+   ASSERT_TRUE(state_file.is_open());
+   std::stringstream state_file_stream;
+   std::copy(std::istreambuf_iterator<char>(state_file),
+       std::istreambuf_iterator<char>(),
+       std::ostreambuf_iterator<char>(state_file_stream));
+   state_file.close();
+   EXPECT_THAT(state_file_stream.str(),
+       testing::HasSubstr("\thistory = {\n"
+                          "\t\tbuildings = {\n"
+                          "\t\t\tinfrastructure = 1\n"
+                          "\t\t\tindustrial_complex = 2\n"
+                          "\t\t\tarms_factory = 4\n"
+                          "\t\t\tdockyard = 6\n"
                           "\t\t}\n"
                           "\t}\n"));
 }
@@ -499,7 +545,7 @@ TEST(Outhoi4StatesState, NavalBasesCanBeOutput)
    EXPECT_THAT(state_file_stream.str(),
        testing::HasSubstr("\thistory = {\n"
                           "\t\tbuildings = {\n"
-                          "\t\t\tinfrastructure = 2\n"
+                          "\t\t\tinfrastructure = 1\n"
                           "\t\t\tindustrial_complex = 0\n"
                           "\t\t\tarms_factory = 0\n"
                           "\t\t\t9 = {\n"
@@ -532,7 +578,7 @@ TEST(Outhoi4StatesState, NavalBasesAreNotOutputWhenLevelIsMissing)
    EXPECT_THAT(state_file_stream.str(),
        testing::HasSubstr("\thistory = {\n"
                           "\t\tbuildings = {\n"
-                          "\t\t\tinfrastructure = 2\n"
+                          "\t\t\tinfrastructure = 1\n"
                           "\t\t\tindustrial_complex = 0\n"
                           "\t\t\tarms_factory = 0\n"
                           "\t\t}\n"
@@ -562,11 +608,108 @@ TEST(Outhoi4StatesState, NavalBasesAreNotOutputWhenLocationIsMissing)
    EXPECT_THAT(state_file_stream.str(),
        testing::HasSubstr("\thistory = {\n"
                           "\t\tbuildings = {\n"
-                          "\t\t\tinfrastructure = 2\n"
+                          "\t\t\tinfrastructure = 1\n"
                           "\t\t\tindustrial_complex = 0\n"
                           "\t\t\tarms_factory = 0\n"
                           "\t\t}\n"
                           "\t}\n"));
+}
+
+
+TEST(Outhoi4StatesState, AirBaseLevelIsAsSet)
+{
+   commonItems::TryCreateFolder("output");
+   commonItems::TryCreateFolder("output/AirBaseLevelIsAsSet");
+   commonItems::TryCreateFolder("output/AirBaseLevelIsAsSet/history");
+   commonItems::TryCreateFolder("output/AirBaseLevelIsAsSet/history/states");
+
+   const hoi4::State state_one(1, {.provinces = {1, 4, 9, 16}, .air_base_level = 3});
+
+   OutputState("AirBaseLevelIsAsSet", state_one);
+
+   ASSERT_TRUE(commonItems::DoesFileExist("output/AirBaseLevelIsAsSet/history/states/1.txt"));
+   std::ifstream state_file("output/AirBaseLevelIsAsSet/history/states/1.txt");
+   ASSERT_TRUE(state_file.is_open());
+   std::stringstream state_file_stream;
+   std::copy(std::istreambuf_iterator<char>(state_file),
+       std::istreambuf_iterator<char>(),
+       std::ostreambuf_iterator<char>(state_file_stream));
+   state_file.close();
+   EXPECT_THAT(state_file_stream.str(),
+       testing::HasSubstr("\thistory = {\n"
+                          "\t\tbuildings = {\n"
+                          "\t\t\tinfrastructure = 1\n"
+                          "\t\t\tindustrial_complex = 0\n"
+                          "\t\t\tarms_factory = 0\n"
+                          "\t\t\tair_base = 3\n"
+                          "\t\t}\n"
+                          "\t}\n"));
+}
+
+
+TEST(Outhoi4StatesState, CoresCanBeOutput)
+{
+   commonItems::TryCreateFolder("output");
+   commonItems::TryCreateFolder("output/CoresCanBeOutput");
+   commonItems::TryCreateFolder("output/CoresCanBeOutput/history");
+   commonItems::TryCreateFolder("output/CoresCanBeOutput/history/states");
+
+   const hoi4::State state_one(1, {.provinces = {1, 4, 9, 16}, .cores = {"ONE", "TWO"}});
+
+   OutputState("CoresCanBeOutput", state_one);
+
+   ASSERT_TRUE(commonItems::DoesFileExist("output/CoresCanBeOutput/history/states/1.txt"));
+   std::ifstream state_file("output/CoresCanBeOutput/history/states/1.txt");
+   ASSERT_TRUE(state_file.is_open());
+   std::stringstream state_file_stream;
+   std::copy(std::istreambuf_iterator<char>(state_file),
+       std::istreambuf_iterator<char>(),
+       std::ostreambuf_iterator<char>(state_file_stream));
+   state_file.close();
+   EXPECT_THAT(state_file_stream.str(),
+       testing::HasSubstr("\thistory = {\n"
+                          "\t\tbuildings = {\n"
+                          "\t\t\tinfrastructure = 1\n"
+                          "\t\t\tindustrial_complex = 0\n"
+                          "\t\t\tarms_factory = 0\n"
+                          "\t\t}\n"
+                          "\t\tadd_core_of = ONE\n"
+                          "\t\tadd_core_of = TWO\n"
+                          "\t}\n"));
+}
+
+TEST(Outhoi4StatesState, InfrastructureIsOutput)
+{
+   commonItems::TryCreateFolder("output");
+   commonItems::TryCreateFolder("output/infrastructureIsOutput");
+   commonItems::TryCreateFolder("output/infrastructureIsOutput/history");
+   commonItems::TryCreateFolder("output/infrastructureIsOutput/history/states");
+
+   const hoi4::State state_one(1, {.infrastructure = 3});
+   const hoi4::State state_two(2, {.infrastructure = 5});
+
+   OutputState("infrastructureIsOutput", state_one);
+   OutputState("infrastructureIsOutput", state_two);
+
+   ASSERT_TRUE(commonItems::DoesFileExist("output/infrastructureIsOutput/history/states/1.txt"));
+   std::ifstream state_file_one("output/infrastructureIsOutput/history/states/1.txt");
+   ASSERT_TRUE(state_file_one.is_open());
+   std::stringstream state_file_stream_one;
+   std::copy(std::istreambuf_iterator<char>(state_file_one),
+       std::istreambuf_iterator<char>(),
+       std::ostreambuf_iterator<char>(state_file_stream_one));
+   state_file_one.close();
+   EXPECT_THAT(state_file_stream_one.str(), testing::HasSubstr("infrastructure = 3"));
+
+   ASSERT_TRUE(commonItems::DoesFileExist("output/infrastructureIsOutput/history/states/2.txt"));
+   std::ifstream state_file_two("output/infrastructureIsOutput/history/states/2.txt");
+   ASSERT_TRUE(state_file_two.is_open());
+   std::stringstream state_file_stream_two;
+   std::copy(std::istreambuf_iterator<char>(state_file_two),
+       std::istreambuf_iterator<char>(),
+       std::ostreambuf_iterator<char>(state_file_stream_two));
+   state_file_two.close();
+   EXPECT_THAT(state_file_stream_two.str(), testing::HasSubstr("infrastructure = 5"));
 }
 
 }  // namespace out

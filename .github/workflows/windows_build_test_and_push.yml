@@ -20,7 +20,7 @@ jobs:
       run: git config --global --add safe.directory /github/workspace
 
     - name: "Cloning repo"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: true
@@ -37,7 +37,7 @@ jobs:
        git tag
 
     - name: "Generate semantic version number"
-      uses: paulhatch/semantic-version@v5.0.3
+      uses: paulhatch/semantic-version@v5.3.0
       id: version_number
       with:
         # The prefix to use to identify tags
@@ -69,13 +69,13 @@ jobs:
        echo '# Version info' | out-file data/version.txt -encoding ASCII
        echo '' | out-file data/version.txt -encoding ASCII -append
        echo 'version = "${{ steps.version_number.outputs.major }}.${{ steps.version_number.outputs.minor }}.${{ steps.version_number.outputs.patch }}"' | out-file data/version.txt -encoding ASCII -append
-       echo 'name = "Anders"' | out-file data/version.txt -encoding ASCII -append
+       echo 'name = "Chen"' | out-file data/version.txt -encoding ASCII -append
        echo 'source = "Vic3"' | out-file data/version.txt -encoding ASCII -append
-       echo 'minSource = "1.0"' | out-file data/version.txt -encoding ASCII -append
-       echo 'maxSource = "1.2"' | out-file data/version.txt -encoding ASCII -append
+       echo 'minSource = "1.3"' | out-file data/version.txt -encoding ASCII -append
+       echo 'maxSource = "1.5"' | out-file data/version.txt -encoding ASCII -append
        echo 'target = "HoI4"' | out-file data/version.txt -encoding ASCII -append
-       echo 'minTarget = "1.12"' | out-file data/version.txt -encoding ASCII -append
-       echo 'maxTarget = "1.12"' | out-file data/version.txt -encoding ASCII -append
+       echo 'minTarget = "1.13"' | out-file data/version.txt -encoding ASCII -append
+       echo 'maxTarget = "1.13"' | out-file data/version.txt -encoding ASCII -append
        cat data/version.txt
 
     - name: "Build solution"
@@ -127,7 +127,7 @@ jobs:
        cd "C:\Program Files\7-Zip\"
        .\7z.exe a $Env:GITHUB_WORKSPACE\Vic3ToHoI4-pull-request-win-x64.zip $Env:GITHUB_WORKSPACE\build\Release\*
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: ${{ github.event_name == 'pull_request' }}
       with:
         name: pull-request-version
@@ -145,7 +145,7 @@ jobs:
 
     steps:
     - name: "Cloning repo"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 

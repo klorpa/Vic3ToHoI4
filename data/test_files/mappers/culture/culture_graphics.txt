@@ -1,0 +1,38 @@
+sample_group = {
+    cultures = { swedish } # In reality, these are probably 3 separate groups
+    traits = { european_heritage }
+    ethnicities = { caucasian }
+
+    army_portraits = {
+        "general0.dds"
+        general1.dds
+    }
+    navy_portraits = {
+        "admiral0.dds"
+        admiral1.dds
+    }
+    political_portraits = {
+        communism = { leader = { "communism0.dds"} minister = { "communism1.dds" } }
+        democratic = { leader = { "democratic0.dds"} minister = { "democratic1.dds" } }
+        fascism = { leader = { "fascism0.dds"} minister = { "fascism1.dds" } }
+        neutrality = { leader = { "neutrality0.dds"} minister = { "neutrality1.dds" } }
+		anarchist = { "council.dds" }
+		monarchist = {
+			male = { "king.dds" }
+			female = { "queen.dds" }
+		}
+    }
+    female_portraits = {
+        "female_leader.dds"
+    }
+    operative_portraits = {
+		male = { "spy_m0.dds" spy_m1.dds }
+		female = { "spy_f0.dds" spy_f1.dds }      
+    }
+	monarch_ideas = {
+		"crown.dds"
+	}
+
+    graphical_culture = west
+    graphical_culture_2d = west_2d
+}

@@ -115,6 +115,71 @@
     <Filter Include="src\mappers\ideology">
       <UniqueIdentifier>{7c13beb4-697e-4147-8bd5-75228d16f02e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\mappers\unit">
+    </Filter>
+    <Filter Include="src\vic3_world\elections">
+      <UniqueIdentifier>{03014797-0ad9-4a5c-85ab-c224657c292d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\cultures">
+      <UniqueIdentifier>{0210ae71-a246-4eeb-976f-0d7733472721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\buildings">
+      <UniqueIdentifier>{6653e1bc-d8f7-4e55-8697-b73d80799878}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mappers\culture">
+      <UniqueIdentifier>{68bf9d92-81c7-4d4b-b67c-f1e680313a9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\out_hoi4\names">
+      <UniqueIdentifier>{de48f3fd-1a80-494a-b93b-b26c7303a06f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\out_hoi4\portraits">
+      <UniqueIdentifier>{bac77715-c87e-4fe0-940b-37d8437d0fc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\characters">
+      <UniqueIdentifier>{f81f8e46-a3c8-4ed3-b66b-4240d2f9c132}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\interest_groups">
+      <UniqueIdentifier>{516af0bf-9efb-4e61-86be-b8b8fdcb0a5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hoi4_world\characters">
+      <UniqueIdentifier>{5ecd0404-b08a-4539-afd1-8708d6914747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\out_hoi4\characters">
+      <UniqueIdentifier>{eda55e84-c86f-4b68-8b2c-51a7b0415073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mappers\character">
+      <UniqueIdentifier>{fa0f93c6-ddc3-420e-9508-2e5f1b971859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\pacts">
+      <UniqueIdentifier>{914aa5c8-6a75-42e9-9802-fc6ad0f23ef1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\ideologies">
+      <UniqueIdentifier>{cb068080-31d2-4e70-b82a-6b8524305d81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mappers\world">
+      <UniqueIdentifier>{e9c5ed27-a779-48d0-b5b8-e75a87e15d9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mappers\infrastructure">
+      <UniqueIdentifier>{7c444af2-8b43-42a1-8594-5ed2a47917c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\out_hoi4\national_focus">
+      <UniqueIdentifier>{51068702-9c15-4e02-8b2e-f7993d075b29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\database">
+      <UniqueIdentifier>{6d91a079-4253-4803-8d94-ca26bcaa0bcd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\institutions">
+      <UniqueIdentifier>{a31b8c90-8381-4ee6-b76f-3ccce22f66e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hoi4_world\diplomacy">
+      <UniqueIdentifier>{5867d162-42d8-4c4b-afc9-d69ad5581eff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vic3_world\wars">
+      <UniqueIdentifier>{bb02c3bf-ee2c-41e9-9a19-1b1bd63be99a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\out_hoi4\diplomacy">
+      <UniqueIdentifier>{22bef3c9-5e92-4aa9-8e42-801243baefc1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\out_hoi4\out_mod_test.cpp">
@@ -285,8 +350,20 @@
     <ClCompile Include="src\hoi4_world\military\equipment_variants_importer_tests.cpp">
       <Filter>src\hoi4_world\military</Filter>
     </ClCompile>
+    <ClCompile Include="src\hoi4_world\military\convoy_distributor_tests.cpp">
+      <Filter>src\hoi4_world\military</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\military\convoy_distributor_builder_tests.cpp">
+      <Filter>src\hoi4_world\military</Filter>
+    </ClCompile>
     <ClCompile Include="src\out_hoi4\military\out_equipment_variant_tests.cpp">
       <Filter>src\out_hoi4\military</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\military\task_force_template_tests.cpp">
+      <Filter>src\hoi4_world\military</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\military\task_force_templates_builder_tests.cpp">
+      <Filter>src\hoi4_world\military</Filter>
     </ClCompile>
     <ClCompile Include="src\hoi4_world\map\railway_tests.cpp">
       <Filter>src\hoi4_world\map</Filter>
@@ -312,16 +389,186 @@
     <ClCompile Include="src\vic3_world\laws\laws_importer_tests.cpp">
       <Filter>src\vic3_world\laws</Filter>
     </ClCompile>
+    <ClCompile Include="src\mappers\flags\flag_mapper_tests.cpp">
+      <Filter>src\mappers\unit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\flags\flag_mapper_builder_tests.cpp">
+      <Filter>src\mappers\unit</Filter>
+    </ClCompile>
     <ClCompile Include="src\mappers\ideology\ideology_mapper_tests.cpp">
       <Filter>src\mappers\ideology</Filter>
     </ClCompile>
     <ClCompile Include="src\mappers\ideology\ideology_mapper_importer_tests.cpp">
       <Filter>src\mappers\ideology</Filter>
     </ClCompile>
+    <ClCompile Include="src\mappers\unit\unit_mapper_tests.cpp">
+      <Filter>src\mappers\unit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\unit\unit_mapper_importer_tests.cpp">
+      <Filter>src\mappers\unit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\elections\elections_importer_tests.cpp">
+      <Filter>src\vic3_world\elections</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\cultures\cultures_importer_tests.cpp">
+      <Filter>src\vic3_world\cultures</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\buildings\building_importer_tests.cpp">
+      <Filter>src\vic3_world\buildings</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\buildings\buildings_tests.cpp">
+      <Filter>src\vic3_world\buildings</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\buildings\buildings_importer_tests.cpp">
+      <Filter>src\vic3_world\buildings</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\states\hoi4_state_tests.cpp">
+      <Filter>src\hoi4_world\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\cultures\culture_definitions_importer_tests.cpp">
+      <Filter>src\vic3_world\cultures</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\culture\culture_graphics_mapper_importer_tests.cpp">
+      <Filter>src\mappers\culture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\culture\culture_graphics_mapper_tests.cpp">
+      <Filter>src\mappers\culture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\names\out_name_list_tests.cpp">
+      <Filter>src\out_hoi4\names</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\portraits\out_portrait_paths_tests.cpp">
+      <Filter>src\out_hoi4\portraits</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\names\out_names_tests.cpp">
+      <Filter>src\out_hoi4\names</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\portraits\out_portraits_tests.cpp">
+      <Filter>src\out_hoi4\portraits</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\characters\vic3_characters_importer_tests.cpp">
+      <Filter>src\vic3_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\characters\vic3_country_character_map_importer_tests.cpp">
+      <Filter>src\vic3_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\characters\vic3_character_importer_tests.cpp">
+      <Filter>src\vic3_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\characters\vic3_character_manager_tests.cpp">
+      <Filter>src\vic3_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\interest_groups\interest_group_importer_tests.cpp">
+      <Filter>src\vic3_world\interest_groups</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\interest_groups\interest_groups_importer_tests.cpp">
+      <Filter>src\vic3_world\interest_groups</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\characters\hoi4_character_converter_tests.cpp">
+      <Filter>src\hoi4_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\characters\out_character_tests.cpp">
+      <Filter>src\out_hoi4\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\character\leader_type_mapper_importer_tests.cpp">
+      <Filter>src\mappers\character</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\character\leader_type_mapper_tests.cpp">
+      <Filter>src\mappers\character</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\characters\hoi4_characters_converter_tests.cpp">
+      <Filter>src\hoi4_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\characters\hoi4_character_tests.cpp">
+      <Filter>src\hoi4_world\characters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\pacts\pact_test.cpp">
+      <Filter>src\vic3_world\pacts</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\pacts\pacts_importer_tests.cpp">
+      <Filter>src\vic3_world\pacts</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\pacts\pact_importer_tests.cpp">
+      <Filter>src\vic3_world\pacts</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\ideologies\ideologies.cpp">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\ideologies\ideologies_tests.cpp">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\character\character_trait_mapper_importer_tests.cpp">
+      <Filter>src\mappers\character</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\character\character_trait_mapper_tests.cpp">
+      <Filter>src\mappers\character</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\ideologies\ideology_importer_tests.cpp">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\ideologies\ideologies_importer_tests.cpp">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\world\world_mapper_builder_tests.cpp">
+      <Filter>src\mappers\world</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\countries\vic3_country_tests.cpp">
+      <Filter>src\vic3_world\countries</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\countries\hoi4_country_converter_tests_tech.cpp">
+      <Filter>src\hoi4_world\countries</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\national_focus\out_focus_tree_tests.cpp">
+      <Filter>src\out_hoi4\national_focus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\states\hoi4_states_converter_tests_state_contents.cpp">
+      <Filter>src\hoi4_world\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\world\hoi4_world_framework_builder_tests.cpp">
+      <Filter>src\hoi4_world\world</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\world\vic3_world_builder_tests.cpp">
+      <Filter>src\vic3_world\world</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\database\database_parser_tests.cpp">
+      <Filter>src\vic3_world\database</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\institutions\institutions_importer_tests.cpp">
+      <Filter>src\vic3_world\institutions</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mappers\infrastructure\infrastructure_mapper_tests.cpp">
+      <Filter>src\mappers\infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\military\battalion_tests.cpp" />
+    <ClCompile Include="src\hoi4_world\military\division_templates_importer_tests.cpp" />
+    <ClCompile Include="src\mappers\resources\resource_mapper_tests.cpp" />
+    <ClCompile Include="src\mappers\resources\resource_mapper_importer_tests.cpp" />
+    <ClCompile Include="src\out_hoi4\decisions\out_decisions_tests.cpp" />
+    <ClCompile Include="src\out_hoi4\flags\out_flags_tests.cpp" />
+    <ClCompile Include="src\hoi4_world\diplomacy\hoi4_war_converter_tests.cpp">
+      <Filter>src\hoi4_world\diplomacy</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\wars\war_importer_tests.cpp">
+      <Filter>src\vic3_world\wars</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\wars\wars_importer_tests.cpp">
+      <Filter>src\vic3_world\wars</Filter>
+    </ClCompile>
+    <ClCompile Include="src\out_hoi4\diplomacy\out_war_tests.cpp">
+      <Filter>src\out_hoi4\diplomacy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="external\rakaly\rakaly.dll">
       <Filter>external\rakaly</Filter>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\vic3_world\ideologies\ideologies.h">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vic3_world\ideologies\ideology.h">
+      <Filter>src\vic3_world\ideologies</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

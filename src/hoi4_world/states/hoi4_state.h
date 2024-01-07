@@ -15,6 +15,9 @@
 namespace hoi4
 {
 
+using StateId = int;
+
+
 struct StateOptions
 {
    std::optional<std::string> owner;
@@ -30,13 +33,18 @@ struct StateOptions
    int dockyards = 0;
    std::optional<int> naval_base_location;
    std::optional<int> naval_base_level;
+   int air_base_level = 0;
+   std::set<std::string> cores;
+
+   float vic3_infrastructure = 0.0F;
+   int infrastructure = 1;
 };
 
 
 class State
 {
   public:
-   State(int id, StateOptions state_options):
+   State(StateId id, StateOptions state_options):
        id_(id),
        owner_(std::move(state_options.owner)),
        provinces_(std::move(state_options.provinces)),
@@ -48,11 +56,15 @@ class State
        military_factories_(state_options.military_factories),
        dockyards_(state_options.dockyards),
        naval_base_location_(state_options.naval_base_location),
-       naval_base_level_(state_options.naval_base_level)
+       naval_base_level_(state_options.naval_base_level),
+       air_base_level_(state_options.air_base_level),
+       cores_(state_options.cores),
+       vic3_infrastructure_(state_options.vic3_infrastructure),
+       infrastructure_(state_options.infrastructure)
    {
    }
 
-   [[nodiscard]] int GetId() const { return id_; }
+   [[nodiscard]] StateId GetId() const { return id_; }
    [[nodiscard]] const std::optional<std::string>& GetOwner() const { return owner_; }
    [[nodiscard]] const std::set<int>& GetProvinces() const { return provinces_; }
    [[nodiscard]] int GetManpower() const { return manpower_; }
@@ -64,11 +76,19 @@ class State
    [[nodiscard]] int GetDockyards() const { return dockyards_; }
    [[nodiscard]] std::optional<int> GetNavalBaseLocation() const { return naval_base_location_; }
    [[nodiscard]] std::optional<int> GetNavalBaseLevel() const { return naval_base_level_; }
+   [[nodiscard]] int GetAirBaseLevel() const { return air_base_level_; }
+   [[nodiscard]] std::set<std::string> GetCores() const { return cores_; }
+   [[nodiscard]] float GetVic3Infrastructure() const { return vic3_infrastructure_; }
+   [[nodiscard]] float GetInfrastructure() const { return infrastructure_; }
+
+   void IncreaseAirBaseLevel(int amount) { air_base_level_ = std::min(air_base_level_ + amount, 10); }
+
+   void SetHighestVictoryPointValue(int value);
 
    std::partial_ordering operator<=>(const State&) const = default;
 
   private:
-   int id_;
+   StateId id_;
    std::optional<std::string> owner_;
    std::set<int> provinces_;
    int manpower_ = 0;
@@ -82,6 +102,11 @@ class State
    int dockyards_ = 0;
    std::optional<int> naval_base_location_;
    std::optional<int> naval_base_level_;
+   int air_base_level_ = 0;
+   std::set<std::string> cores_;
+
+   float vic3_infrastructure_ = 0.0F;
+   int infrastructure_ = 1;
 };
 
 }  // namespace hoi4

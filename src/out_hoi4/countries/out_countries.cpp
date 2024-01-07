@@ -6,10 +6,13 @@
 #include "external/commonItems/OSCompatibilityLayer.h"
 #include "external/fmt/include/fmt/format.h"
 #include "src/out_hoi4/countries/out_country.h"
+#include "src/out_hoi4/national_focus/out_focus_tree.h"
 
 
 
-void out::OutputCountries(std::string_view output_name, const std::map<std::string, hoi4::Country>& countries)
+void out::OutputCountries(std::string_view output_name,
+    const std::map<std::string, hoi4::Country>& countries,
+    const std::map<int, hoi4::Character>& characters)
 {
    std::ofstream tags_file(fmt::format("output/{}/common/country_tags/00_countries.txt", output_name));
    if (!tags_file.is_open())
@@ -18,13 +21,17 @@ void out::OutputCountries(std::string_view output_name, const std::map<std::stri
           fmt::format("Could not open output/{}/common/country_tags/00_countries.txt", output_name));
    }
 
-   for (const auto& country: countries | std::views::values)
+   for (const auto& [tag, country]: countries)
    {
       OutputCommonCountryTag(country, tags_file);
       OutputCommonCountriesFile(output_name, country);
-      OutputCountryHistory(output_name, country);
-      commonItems::TryCopyFile("configurables/division_templates.txt",
-          fmt::format("output/{}/history/units/{}_1936.txt", output_name, country.GetTag()));
+      OutputCommonCharactersFile(output_name, country, characters);
+      OutputCountryHistory(output_name, country, characters);
+      auto oob_file = fmt::format("output/{}/history/units/{}_1936.txt", output_name, tag);
+      commonItems::TryCopyFile("configurables/division_templates.txt", oob_file);
+      OutputCountryUnits(oob_file, country);
+      OutputCountryNavy(output_name, country);
+      OutputFocusTree(output_name, tag);
    }
 
    tags_file.close();

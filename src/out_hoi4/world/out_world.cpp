@@ -1,15 +1,20 @@
 #include "out_world.h"
 
 #include <fstream>
+#include <ranges>
 
 #include "external/fmt/include/fmt/format.h"
 #include "src/out_hoi4/countries/out_countries.h"
+#include "src/out_hoi4/decisions/out_decisions.h"
+#include "src/out_hoi4/ideas/out_ideas.h"
 #include "src/out_hoi4/localizations/out_localizations.h"
 #include "src/out_hoi4/map/out_buildings.h"
 #include "src/out_hoi4/map/out_railways.h"
 #include "src/out_hoi4/map/out_rocket_sites.h"
 #include "src/out_hoi4/map/out_strategic_regions.h"
 #include "src/out_hoi4/map/out_supply_nodes.h"
+#include "src/out_hoi4/names/out_names.h"
+#include "src/out_hoi4/portraits/out_portraits.h"
 #include "src/out_hoi4/states/out_states.h"
 #include "src/support/date_fmt.h"
 
@@ -74,18 +79,20 @@ void OutputBookmark(std::string_view output_name,
 
 }  // namespace
 
-
-
 void out::OutputWorld(std::string_view output_name, const hoi4::World& world)
 {
-   OutputCountries(output_name, world.GetCountries());
+   OutputCountries(output_name, world.GetCountries(), world.GetCharacters());
+   OutputDecisions(output_name, world.GetCountries());
+   OutputMonarchIdeas(output_name, world.GetCountries(), world.GetCharacters());
    OutputStates(output_name, world.GetStates().states);
    OutputStrategicRegions(output_name, world.GetStrategicRegions());
    OutputBuildings(output_name, world.GetBuildings());
    OutputRocketSites(output_name, world.GetStates().states);
    OutputRailways(output_name, world.GetRailways().railways);
-   OutputSupplyNodes(output_name, world.GetRailways().railway_endpoints);
+   OutputSupplyNodes(output_name, world.GetRailways().supply_nodes);
    OutputLocalizations(output_name, world.GetLocalizations());
+   OutputNames(output_name, world.GetCountries());
+   OutputPortraits(output_name, world.GetCountries());
    OutputBookmark(output_name,
        "grand_campaign",
        date("1936.1.1"),

@@ -19,7 +19,7 @@ class StateImporter
   public:
    StateImporter();
 
-   [[nodiscard]] State ImportState(std::istream& input_stream);
+   [[nodiscard]] State ImportState(std::string_view key, std::istream& input_stream);
 
   private:
    commonItems::parser state_parser_;
@@ -27,6 +27,8 @@ class StateImporter
    commonItems::parser pop_statistics_parser_;
 
    std::optional<int> owner_number_;
+   bool incorporated_ = false;
+   float infrastructure_ = 0.0F;
    std::set<int> provinces_;
    int population_ = 0;
    int employed_population_ = 0;
