@@ -42,20 +42,41 @@ vic3::BudgetLevel parseBudgetLevel(const std::string& level_string)
 
 vic3::CountryImporter::CountryImporter()
 {
+   dynamic_name_parser_.registerKeyword("dynamic_country_name", [this](std::istream& input_stream) {
+      options_.dynamic_name = commonItems::getString(input_stream);
+   });
+   dynamic_name_parser_.registerKeyword("dynamic_country_adjective", [this](std::istream& input_stream) {
+      options_.dynamic_adjective = commonItems::getString(input_stream);
+   });
+   dynamic_name_parser_.registerKeyword("use_overlord_prefix", [this](std::istream& input_stream) {
+      options_.use_overlord_prefix = (commonItems::getString(input_stream) == "yes");
+   });
+
    country_parser_.registerKeyword("definition", [this](std::istream& input_stream) {
-      options_.tag = commonItems::remQuotes(commonItems::getString(input_stream));
+      options_.tag = commonItems::getString(input_stream);
    });
    country_parser_.registerKeyword("dynamic_country_name", [this](std::istream& input_stream) {
-      options_.dynamic_name = commonItems::remQuotes(commonItems::getString(input_stream));
+      options_.dynamic_name = commonItems::getString(input_stream);
    });
    country_parser_.registerKeyword("dynamic_country_adjective", [this](std::istream& input_stream) {
-      options_.dynamic_adjective = commonItems::remQuotes(commonItems::getString(input_stream));
+      options_.dynamic_adjective = commonItems::getString(input_stream);
+   });
+   country_parser_.registerKeyword("dynamic_name", [this](std::istream& input_stream) {
+      dynamic_name_parser_.parseStream(input_stream);
    });
    country_parser_.registerKeyword("map_color", [this](std::istream& input_stream) {
       options_.color = commonItems::Color::Factory{}.getColor(input_stream);
    });
    country_parser_.registerKeyword("capital", [this](std::istream& input_stream) {
-      options_.capital_state = commonItems::getInt(input_stream);
+      const int64_t temp_number = commonItems::getLlong(input_stream);
+      if (temp_number == 4294967295)
+      {
+         options_.capital_state = -1;
+      }
+      else
+      {
+         options_.capital_state = static_cast<int>(temp_number);
+      }
    });
    country_parser_.registerKeyword("country_type", [this](std::istream& input_stream) {
       options_.country_type = commonItems::getString(input_stream);
@@ -79,11 +100,19 @@ vic3::CountryImporter::CountryImporter()
       }
    });
    country_parser_.registerKeyword("ruler", [this](std::istream& input_stream) {
-      options_.head_of_state_id = commonItems::getLlong(input_stream);
+      const int64_t temp_number = commonItems::getLlong(input_stream);
+      if (temp_number == 4294967295)
+      {
+         options_.head_of_state_id = -1;
+      }
+      else
+      {
+         options_.head_of_state_id = static_cast<int>(temp_number);
+      }
    });
 
    country_parser_.registerKeyword("dead", [this](std::istream& input_stream) {
-      is_dead_ = commonItems::getString(input_stream) == "yes";
+      options_.is_dead = commonItems::getString(input_stream) == "yes";
    });
 
    /// ---- counters parser ----
@@ -107,13 +136,7 @@ std::optional<vic3::Country> vic3::CountryImporter::ImportCountry(const int numb
     const std::map<std::string, commonItems::Color>& color_definitions)
 {
    options_ = {};
-   is_dead_ = false;
-
    country_parser_.parseStream(input_stream);
-   if (is_dead_)
-   {
-      return std::nullopt;
-   }
 
    if (options_.color == commonItems::Color())
    {

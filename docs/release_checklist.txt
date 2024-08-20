@@ -1,4 +1,4 @@
-* Add new banner to data/resources/images
+* Add new banner to data/release_banners
 * Update data/version.txt with new version and name
 * Update Vic3ToHoI4-Installer.iss with new version and name
 * Update data/readme.txt with new version

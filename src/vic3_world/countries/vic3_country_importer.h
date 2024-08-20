@@ -25,11 +25,10 @@ class CountryImporter
 
   private:
    commonItems::parser country_parser_;
+   commonItems::parser dynamic_name_parser_;
    commonItems::parser counters_parser_;
 
    CountryOptions options_;
-
-   bool is_dead_ = false;  // Country marked as invalid data by game, but not yet cleaned up
 };
 
 }  // namespace vic3

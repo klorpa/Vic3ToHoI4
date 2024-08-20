@@ -29,7 +29,7 @@ TEST(Vic3worldWorldVic3worldimporter, DefaultsAreCorrect)
 
    EXPECT_TRUE(world.GetCountries().empty());
    EXPECT_TRUE(world.GetStates().empty());
-   EXPECT_TRUE(world.GetProvinceDefinitions().GetProvinceDefinitions().empty());
+   EXPECT_FALSE(world.GetProvinceDefinitions().GetProvinceDefinitions().empty());
    EXPECT_TRUE(world.GetAcquiredTechnologies().empty());
    EXPECT_EQ(world.GetLocalizations().size(), 0);
    EXPECT_TRUE(world.GetCultureDefinitions().empty());
@@ -49,18 +49,36 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
 
    EXPECT_THAT(world.GetCountries(),
        testing::UnorderedElementsAre(testing::Pair(1,
-                                         Country({
-                                             .number = 1,
-                                             .tag = "TAG",
-                                             .color = commonItems::Color(std::array{1, 2, 3}),
-                                             .active_laws = {"law_monarchy"},
-                                             .primary_culture_ids = {0},
-                                             .primary_cultures = {"welsh"},
-                                             .head_of_state_id = 1,
-                                             .character_ids = {1, 2, 4},
-                                             .ig_ids = {1, 2},
-                                             .puppets = {3},
-                                         })),
+                                         Country(
+                                             {
+                                                 .number = 1,
+                                                 .tag = "TAG",
+                                                 .color = commonItems::Color(std::array{1, 2, 3}),
+                                                 .active_laws = {"law_monarchy"},
+                                                 .primary_culture_ids = {0},
+                                                 .primary_cultures = {"welsh"},
+                                                 .head_of_state_id = 1,
+                                                 .character_ids = {1, 2, 4},
+                                                 .ig_ids = {1, 2},
+                                                 .puppets = {3},
+                                                 .army_formations =
+                                                     {
+                                                         {1234,
+                                                             MilitaryFormation{
+                                                                 .country = 1,
+                                                                 .type = MilitaryFormationType::kArmy,
+                                                                 .name = "Formation Name",
+                                                                 .ordinal_number = 2,
+                                                                 .units =
+                                                                     {
+                                                                         {"combat_unit_type_shrapnel_artillery", 2},
+                                                                         {"combat_unit_type_dragoons", 3},
+                                                                         {"combat_unit_type_trench_infantry", 24},
+                                                                         {"combat_unit_type_siege_artillery", 2},
+                                                                         {"combat_unit_type_skirmish_infantry", 8},
+                                                                     },
+                                                             }}},
+                                             })),
            testing::Pair(3,
                Country({
                    .number = 3,
@@ -72,6 +90,11 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
                    .character_ids = {5},
                    .ig_ids = {3},
                    .overlord = 1,
+                   .navy_formations = {{5678,
+                       MilitaryFormation{
+                           .country = 3,
+                           .type = MilitaryFormationType::kFleet,
+                       }}},
                }))));
    EXPECT_THAT(world.GetStates(),
        testing::UnorderedElementsAre(testing::Pair(0, State({.provinces = {1, 2, 3}})),
@@ -140,7 +163,7 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
                    .ig_id = 2,
                    .roles = {"general"},
                    .rank = 2,
-                   .is_commander = true,
+                   .formation_id = 1234,
                })),
            testing::Pair(4,
                Character({
@@ -164,7 +187,7 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
                    .ig_id = 3,
                    .roles = {"general", "politician"},
                    .rank = 1,
-                   .is_commander = true,
+                   .formation_id = 1234,
                })),
            testing::Pair(6,
                Character({
@@ -200,7 +223,7 @@ TEST(Vic3worldWorldVic3worldimporter, ConversionDateIsLogged)
 
    std::cout.rdbuf(cout_buffer);
 
-   EXPECT_THAT(log.str(), testing::HasSubstr(R"([INFO] Converting at 1923.6.12.)"));
+   EXPECT_THAT(log.str(), testing::HasSubstr(R"([INFO] Converting at 1923.6.10.)"));
 }
 
 

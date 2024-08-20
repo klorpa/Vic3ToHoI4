@@ -1,3 +1,4 @@
+#include <optional>
 #include <sstream>
 
 #include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
@@ -7,10 +8,13 @@
 
 
 
+namespace mappers
+{
+
 TEST(MappersProvincesProvinceMapperImporterTests, ProvinceMappingsCanBeImported)
 {
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/empty_definition/", {});
-   const auto province_mappings = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/empty_definition/", {});
+   const auto province_mappings = ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
 
    EXPECT_THAT(province_mappings.GetVic3ToHoi4ProvinceMapping("x000001"), testing::ElementsAre(1, 10));
    EXPECT_THAT(province_mappings.GetVic3ToHoi4ProvinceMapping("x000200"), testing::ElementsAre(2));
@@ -27,20 +31,21 @@ TEST(MappersProvincesProvinceMapperImporterTests, ProvinceMappingsCanBeImported)
 
 TEST(MappersProvincesProvinceMapperImporterTests, MissingMapDefinitionThrowsException)
 {
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/no_definition/", {});
-   EXPECT_THROW(const auto province_mappings = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings(),
-       std::runtime_error);
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/no_definition/", {});
+
+   EXPECT_THROW((ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings()), std::runtime_error);
 }
+
 
 
 TEST(MappersProvincesProvinceMapperImporterTests, BadLineInMapDefinitionLogsWarning)
 {
    std::stringstream log;
-   auto stdOutBuf = std::cout.rdbuf();
+   std::streambuf* stdOutBuf = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/bad_line_definition/", {});
-   auto _ = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/bad_line_definition/", {});
+   auto _ = ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
    std::cout.rdbuf(stdOutBuf);
 
    EXPECT_THAT(log.str(),
@@ -51,11 +56,11 @@ TEST(MappersProvincesProvinceMapperImporterTests, BadLineInMapDefinitionLogsWarn
 TEST(MappersProvincesProvinceMapperImporterTests, MissingHoi4ProvinceMappingLogsWarning)
 {
    std::stringstream log;
-   auto stdOutBuf = std::cout.rdbuf();
+   std::streambuf* stdOutBuf = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/missing_definition/", {});
-   const auto province_mappings = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/missing_definition/", {});
+   const auto province_mappings = ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
    const auto _ = province_mappings.GetHoi4ToVic3ProvinceMapping(12);
 
    std::cout.rdbuf(stdOutBuf);
@@ -67,11 +72,11 @@ TEST(MappersProvincesProvinceMapperImporterTests, MissingHoi4ProvinceMappingLogs
 
 TEST(MappersProvincesProvinceMapperImporterTests, MissingVic3ProvinceMappingLogsWarning)
 {
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/empty_definition/", {});
-   const auto province_mappings = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/empty_definition/", {});
+   const auto province_mappings = ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
 
    std::stringstream log;
-   auto stdOutBuf = std::cout.rdbuf();
+   std::streambuf* stdOutBuf = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
    const auto _ = province_mappings.GetVic3ToHoi4ProvinceMapping("0x000012");
@@ -85,14 +90,16 @@ TEST(MappersProvincesProvinceMapperImporterTests, MissingVic3ProvinceMappingLogs
 TEST(MappersProvincesProvinceMapperImporterTests, ExtraProvinceMappingsLogWarning)
 {
    std::stringstream log;
-   auto stdOutBuf = std::cout.rdbuf();
+   std::streambuf* stdOutBuf = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/good_definition/", {});
-   const auto province_mappings = mappers::ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
+   const commonItems::ModFilesystem mod_filesystem("./test_files/mappers/provinces/good_definition/", {});
+   [[maybe_unused]] const auto province_mappings = ProvinceMapperImporter{mod_filesystem}.ImportProvinceMappings();
 
    std::cout.rdbuf(stdOutBuf);
 
    EXPECT_THAT(log.str(), testing::HasSubstr("[WARNING] Vic3 province x000001 was in multiple mappings."));
    EXPECT_THAT(log.str(), testing::HasSubstr("[WARNING] Hoi4 province 1 was in multiple mappings."));
 }
+
+}  // namespace mappers

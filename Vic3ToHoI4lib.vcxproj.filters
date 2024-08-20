@@ -198,6 +198,15 @@
     <Filter Include="src\vic3_world\wars">
       <UniqueIdentifier>{f81bdcd3-9fdd-4a81-b245-ab3bae1d4db4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\vic3_world\military">
+      <UniqueIdentifier>{5c7d0789-b5d6-46fe-906f-5e9065413240}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hoi4_world\roles">
+      <UniqueIdentifier>{f5cd94ce-f93a-487a-b538-f5559c16ae34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hoi4_world\focus_trees">
+      <UniqueIdentifier>{e75e61e2-d258-4f81-ae2d-b2f2374594be}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vic3_to_hoi4_converter.h">
@@ -488,9 +497,6 @@
     <ClInclude Include="src\mappers\flags\flag_mapper.h">
       <Filter>src\mappers\unit</Filter>
     </ClInclude>
-    <ClInclude Include="src\mappers\flags\flag_mapper_importer.h">
-      <Filter>src\mappers\unit</Filter>
-    </ClInclude>
     <ClInclude Include="src\mappers\ideology\ideology_mapper.h">
       <Filter>src\mappers\ideology</Filter>
     </ClInclude>
@@ -735,6 +741,33 @@
     </ClInclude>
     <ClInclude Include="src\vic3_world\wars\wars_importer.h">
       <Filter>src\vic3_world\wars</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vic3_world\military\military_formation.h">
+      <Filter>src\vic3_world\military</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vic3_world\military\military_formation_importer.h">
+      <Filter>src\vic3_world\military</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vic3_world\military\military_formations_importer.h">
+      <Filter>src\vic3_world\military</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\roles\role.h">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\roles\role_importer.h">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\roles\roles_importer.h">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\roles\stories_creator.h">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\focus_trees\focus.h">
+      <Filter>src\hoi4_world\focus_trees</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hoi4_world\focus_trees\focus_importer.h">
+      <Filter>src\hoi4_world\focus_trees</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1136,6 +1169,24 @@
     </ClCompile>
     <ClCompile Include="src\vic3_world\wars\wars_importer.cpp">
       <Filter>src\vic3_world\wars</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\military\military_formation_importer.cpp">
+      <Filter>src\vic3_world\military</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vic3_world\military\military_formations_importer.cpp">
+      <Filter>src\vic3_world\military</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\roles\role_importer.cpp">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\roles\roles_importer.cpp">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\roles\stories_creator.cpp">
+      <Filter>src\hoi4_world\roles</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hoi4_world\focus_trees\focus_importer.cpp">
+      <Filter>src\hoi4_world\focus_trees</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
