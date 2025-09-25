@@ -1,11 +1,13 @@
 #include "src/mappers/culture/culture_graphics_mapper_importer.h"
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/ParserHelpers.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/fmt/include/fmt/format.h>
 
 
-mappers::CultureGraphicsMapper mappers::ImportCultureGraphicsMapper(std::string_view mapping_file)
+
+mappers::CultureGraphicsMapper mappers::ImportCultureGraphicsMapper(const std::filesystem::path& mapping_file)
 {
    std::vector<CultureGraphicsMapping> mappings;
 
@@ -91,6 +93,10 @@ mappers::CultureGraphicsMapper mappers::ImportCultureGraphicsMapper(std::string_
    mapping_parser.registerKeyword("navy_portraits", [&mapping](std::istream& input_stream) {
       mapping.graphics_block.portrait_paths["navy"] = commonItems::getStrings(input_stream);
    });
+   mapping_parser.registerKeyword("scientist_portraits", [&gender_prefix, &gender_parser](std::istream& input_stream) {
+      gender_prefix = "scientist";
+      gender_parser.parseStream(input_stream);
+   });
    mapping_parser.registerKeyword("female_portraits", [&mapping](std::istream& input_stream) {
       mapping.graphics_block.portrait_paths["female_leader"] = commonItems::getStrings(input_stream);
    });
@@ -111,7 +117,7 @@ mappers::CultureGraphicsMapper mappers::ImportCultureGraphicsMapper(std::string_
 
    commonItems::parser file_parser;
    file_parser.registerRegex(commonItems::catchallRegex,
-       [&mappings, &mapping, &mapping_parser](const std::string& name, std::istream& input_stream) {
+       [&mappings, &mapping, &mapping_parser]([[maybe_unused]] const std::string& name, std::istream& input_stream) {
           mapping = CultureGraphicsMapping();
           mapping_parser.parseStream(input_stream);
           mappings.push_back(mapping);

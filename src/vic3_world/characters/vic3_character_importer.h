@@ -3,9 +3,12 @@
 
 
 
+#include <external/commonItems/Parser.h>
+
 #include <istream>
 
 #include "src/vic3_world/characters/vic3_character.h"
+
 
 
 namespace vic3

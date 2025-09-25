@@ -1,13 +1,14 @@
 #include "src/hoi4_world/military/task_force_templates_builder.h"
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/Log.h"
-#include "external/commonItems/Parser.h"
-#include "external/commonItems/ParserHelpers.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/Parser.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/commonItems/StringUtils.h>
 
 
 
-std::vector<hoi4::TaskForceTemplate> hoi4::ImportTaskForceTemplates(std::string_view templates_filename)
+std::vector<hoi4::TaskForceTemplate> hoi4::ImportTaskForceTemplates(const std::filesystem::path& templates_filename)
 {
    std::vector<TaskForceTemplate> taskforce_templates;
    std::map<std::string, float> costs;
@@ -15,10 +16,10 @@ std::vector<hoi4::TaskForceTemplate> hoi4::ImportTaskForceTemplates(std::string_
 
    commonItems::parser cost_parser;
    cost_parser.registerRegex(commonItems::catchallRegex, [&costs](const std::string& key, std::istream& input_stream) {
-      auto value = commonItems::getDouble(input_stream);
+      const auto value = static_cast<float>(commonItems::getDouble(input_stream));
       // Disallow tiny costs to avoid spamming conversion
       // with ships and infinite ship-creation loops.
-      if (value < 0.01)
+      if (value < 0.01F)
       {
          return;
       }
@@ -29,12 +30,14 @@ std::vector<hoi4::TaskForceTemplate> hoi4::ImportTaskForceTemplates(std::string_
       cost_parser.parseStream(input_stream);
    });
    template_parser.registerKeyword("ship", [&ships](std::istream& input_stream) {
-      commonItems::simpleObject shipValues(input_stream);
-      hoi4::Ship ship(commonItems::remQuotes(shipValues.getValue("name")),
-          shipValues.getValue("definition"),
-          shipValues.getValue("equipment"),
-          shipValues.getValue("legacy_equipment"),
-          commonItems::remQuotes(shipValues.getValue("version")));
+      const commonItems::simpleObject ship_values(input_stream);
+      const hoi4::Ship ship(ShipOptions{
+          .name = commonItems::remQuotes(ship_values.getValue("name")),
+          .definition = ship_values.getValue("definition"),
+          .equipment = ship_values.getValue("equipment"),
+          .legacy_equipment = ship_values.getValue("legacy_equipment"),
+          .version = commonItems::remQuotes(ship_values.getValue("version")),
+      });
       if (ship.GetName().empty())
       {
          Log(LogLevel::Warning) << "Ignore ship without name";

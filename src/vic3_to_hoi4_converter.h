@@ -3,12 +3,14 @@
 
 
 
-#include "external/commonItems/ConverterVersion.h"
+#include <external/commonItems/ConverterVersion.h>
+
 #include "src/configuration/configuration.h"
 
 
 
-void ConvertVic3ToHoi4(const configuration::Configuration& configuration, const GameVersion& game_version);
+void ConvertVic3ToHoi4(const configuration::Configuration& configuration,
+    const commonItems::ConverterVersion& converter_version);
 
 
 

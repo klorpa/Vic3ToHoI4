@@ -3,12 +3,13 @@
 
 
 
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+#include <external/commonItems/Parser.h>
+
 #include <map>
 #include <set>
 #include <vector>
 
-#include "external/commonItems/ModLoader/ModFilesystem.h"
-#include "external/commonItems/Parser.h"
 #include "src/configuration/configuration.h"
 #include "src/mappers/provinces/province_mapper.h"
 #include "src/mappers/provinces/province_mapping_importer.h"
@@ -32,6 +33,8 @@ class ProvinceMapperImporter
    commonItems::parser version_parser_;
    commonItems::parser mapping_parser_;
    ProvinceMappingImporter mapping_importer_;
+
+   std::string current_region_;
 
    Vic3ToHoi4ProvinceMapping vic3_to_hoi4_province_map_;
    Hoi4ToVic3ProvinceMapping hoi4_to_vic3_province_map_;

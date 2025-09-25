@@ -1,17 +1,17 @@
 #include "src/vic3_world/pacts/pact_importer.h"
 
-#include "external/commonItems/ParserHelpers.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/ParserHelpers.h>
+#include <external/fmt/include/fmt/format.h>
 
 
 
 vic3::PactImporter::PactImporter()
 {
    targets_parser_.registerKeyword("first", [this](std::istream& input_stream) {
-      first_id_ = commonItems::getInt(input_stream);
+      partners_.first = commonItems::getInt(input_stream);
    });
    targets_parser_.registerKeyword("second", [this](std::istream& input_stream) {
-      second_id_ = commonItems::getInt(input_stream);
+      partners_.second = commonItems::getInt(input_stream);
    });
    targets_parser_.IgnoreUnregisteredItems();
 
@@ -19,10 +19,10 @@ vic3::PactImporter::PactImporter()
       targets_parser_.parseStream(input_stream);
    });
    pact_parser_.registerKeyword("first", [this](std::istream& input_stream) {
-      first_id_ = commonItems::getInt(input_stream);
+      partners_.first = commonItems::getInt(input_stream);
    });
    pact_parser_.registerKeyword("second", [this](std::istream& input_stream) {
-      second_id_ = commonItems::getInt(input_stream);
+      partners_.second = commonItems::getInt(input_stream);
    });
    pact_parser_.registerKeyword("action", [this](std::istream& input_stream) {
       action_ = commonItems::getString(input_stream);
@@ -37,15 +37,15 @@ vic3::PactImporter::PactImporter()
 }
 
 
-vic3::Pact vic3::PactImporter::ImportPact(const int id, std::istream& input_stream)
+vic3::Pact vic3::PactImporter::ImportPact(std::istream& input_stream)
 {
-   first_id_ = 0;
-   second_id_ = 0;
+   partners_.first = 0;
+   partners_.second = 0;
    action_.clear();
    start_date_ = date();
    forced_duration_.reset();
 
    pact_parser_.parseStream(input_stream);
 
-   return {first_id_, second_id_, action_, start_date_, forced_duration_};
+   return {partners_, action_, start_date_, forced_duration_};
 }

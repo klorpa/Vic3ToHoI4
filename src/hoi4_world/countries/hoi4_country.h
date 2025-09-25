@@ -3,11 +3,13 @@
 
 
 
+#include <external/commonItems/Color.h>
+#include <external/commonItems/Date.h>
+
 #include <string>
 
-#include "external/commonItems/Color.h"
-#include "external/commonItems/Date.h"
 #include "src/hoi4_world/diplomacy/hoi4_war.h"
+#include "src/hoi4_world/focus_trees/focus_tree.h"
 #include "src/hoi4_world/military/equipment_variant.h"
 #include "src/hoi4_world/military/ship.h"
 #include "src/hoi4_world/military/task_force.h"
@@ -16,8 +18,10 @@
 #include "src/mappers/culture/culture_graphics_mapping.h"
 
 
+
 namespace hoi4
 {
+
 struct NameList
 {
    std::set<std::string> male_names;
@@ -43,6 +47,7 @@ struct CountryOptions
    int source_country_number;
    std::string tag;
    commonItems::Color color;
+   std::set<int> owned_states;
    std::optional<int> capital_state;
    std::set<std::string> primary_cultures;
    std::string ideology = "neutrality";
@@ -81,6 +86,7 @@ class Country
        source_country_number_(country_options.source_country_number),
        tag_(std::move(country_options.tag)),
        color_(country_options.color),
+       owned_states_(std::move(country_options.owned_states)),
        capital_state_(country_options.capital_state),
        primary_cultures_(std::move(country_options.primary_cultures)),
        ideology_(std::move(country_options.ideology)),
@@ -116,6 +122,7 @@ class Country
    [[nodiscard]] int GetSourceCountryNumber() const { return source_country_number_; }
    [[nodiscard]] const std::string& GetTag() const { return tag_; }
    [[nodiscard]] const commonItems::Color& GetColor() const { return color_; }
+   [[nodiscard]] const std::set<int>& GetOwnedStates() const { return owned_states_; }
    [[nodiscard]] const std::optional<int>& GetCapitalState() const { return capital_state_; }
    [[nodiscard]] const std::set<std::string>& GetPrimaryCultures() const { return primary_cultures_; }
    [[nodiscard]] int GetConvoys() const { return convoys_; }
@@ -144,9 +151,11 @@ class Country
    [[nodiscard]] const std::vector<TaskForce>& GetTaskForces() const { return task_forces_; }
    [[nodiscard]] const std::vector<Unit>& GetUnits() const { return units_; }
    [[nodiscard]] const std::vector<War>& GetWars() const { return wars_; }
+   [[nodiscard]] const FocusTree& GetFocusTree() const { return focus_tree_; }
 
    void AddWar(War war) { wars_.emplace_back(std::move(war)); }
    void RemovePuppets(const std::set<std::string>& puppet_tags);
+   void SetFocusTree(const FocusTree& focus_tree) { focus_tree_ = focus_tree; }
 
    std::partial_ordering operator<=>(const Country&) const = default;
 
@@ -158,6 +167,7 @@ class Country
    int source_country_number_;
    std::string tag_;
    commonItems::Color color_;
+   std::set<int> owned_states_;
    std::optional<int> capital_state_;
    std::set<std::string> primary_cultures_;
    std::string ideology_ = "neutrality";
@@ -187,6 +197,7 @@ class Country
    int convoys_;
    std::vector<TaskForce> task_forces_;
    std::vector<War> wars_;
+   FocusTree focus_tree_;
 };
 
 }  // namespace hoi4

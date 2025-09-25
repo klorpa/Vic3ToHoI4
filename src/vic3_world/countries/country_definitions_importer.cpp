@@ -1,9 +1,10 @@
 #include "src/vic3_world/countries/country_definitions_importer.h"
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/Parser.h"
-#include "external/commonItems/ParserHelpers.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/Parser.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/fmt/include/fmt/format.h>
 
 
 
@@ -32,11 +33,12 @@ std::map<std::string, commonItems::Color> vic3::ImportCountryColorDefinitions(
           }
           catch (...)
           {
+             Log(LogLevel::Warning) << fmt::format("Could not parse color for country {}", current_tag);
           }
        });
    country_definition_parser.registerRegex(commonItems::catchallRegex, commonItems::ignoreItem);
 
-   for (const auto& definition_filename: mod_filesystem.GetAllFilesInFolder("/common/country_definitions/"))
+   for (const auto& definition_filename: mod_filesystem.GetAllFilesInFolder("common/country_definitions/"))
    {
       country_definitions_parser.parseFile(definition_filename);
    }

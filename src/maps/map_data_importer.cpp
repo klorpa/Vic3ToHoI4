@@ -1,7 +1,10 @@
 #include "src/maps/map_data_importer.h"
 
-#include "external/bitmap/bitmap_image.hpp"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/Log.h>
+#include <external/fmt/include/fmt/format.h>
+
+#include <external/bitmap/bitmap_image.hpp>
+
 #include "src/support/progress_manager.h"
 
 
@@ -86,7 +89,9 @@ commonItems::Color GetRightColor(maps::Point position, int width, const bitmap_i
 
 maps::MapData maps::MapDataImporter::ImportMapData(const commonItems::ModFilesystem& mod_filesystem)
 {
+   Log(LogLevel::Info) << "    -> Importing Provinces";
    ImportProvinces(mod_filesystem);
+   Log(LogLevel::Info) << "    -> Importing Adjacencies";
    ImportAdjacencies(mod_filesystem);
 
    return maps::MapData({.province_neighbors = province_neighbors_,
@@ -99,16 +104,16 @@ maps::MapData maps::MapDataImporter::ImportMapData(const commonItems::ModFilesys
 
 void maps::MapDataImporter::ImportProvinces(const commonItems::ModFilesystem& mod_filesystem)
 {
-   const auto path = mod_filesystem.GetActualFileLocation("/map/provinces.bmp");
+   const auto path = mod_filesystem.GetActualFileLocation("map/provinces.bmp");
    if (!path)
    {
-      throw std::runtime_error("Could not find /map/provinces.bmp");
+      throw std::runtime_error("Could not find map/provinces.bmp");
    }
 
-   bitmap_image province_map(*path);
+   bitmap_image province_map(path->string());
    if (!province_map)
    {
-      throw std::runtime_error(fmt::format("Could not open {}/map/provinces.bmp", *path));
+      throw std::runtime_error(fmt::format("Could not open {}/map/provinces.bmp", path->string()));
    }
 
    int prev_progress = 0;
@@ -118,7 +123,7 @@ void maps::MapDataImporter::ImportProvinces(const commonItems::ModFilesystem& mo
    {
       for (int x = 0; x < width; x++)
       {
-         Point position = {x, y};
+         Point position = {.x = x, .y = y};
 
          auto center_color = GetCenterColor(position, province_map);
          auto above_color = GetAboveColor(position, province_map);
@@ -178,53 +183,55 @@ void maps::MapDataImporter::HandleNeighbor(const commonItems::Color& center_colo
    const auto other_province = province_definitions_.GetProvinceFromColor(other_color);
    if (center_province && other_province)
    {
-      AddNeighbor(*center_province, *other_province);
-      AddPointToBorder(*center_province, *other_province, position);
+      AddNeighbor(MainProvince{*center_province}, NeighborProvince{*other_province});
+      AddPointToBorder(MainProvince{*center_province}, NeighborProvince{*other_province}, position);
    }
 }
 
 
-void maps::MapDataImporter::AddNeighbor(const std::string& main_province, const std::string& neighbor_province)
+void maps::MapDataImporter::AddNeighbor(const MainProvince& main_province, const NeighborProvince& neighbor_province)
 {
-   if (const auto center_mapping = province_neighbors_.find(main_province); center_mapping != province_neighbors_.end())
+   if (const auto center_mapping = province_neighbors_.find(main_province.Get());
+       center_mapping != province_neighbors_.end())
    {
-      center_mapping->second.insert(neighbor_province);
+      center_mapping->second.insert(neighbor_province.Get());
    }
    else
    {
-      const std::set<std::string> neighbors = {neighbor_province};
-      province_neighbors_[main_province] = neighbors;
+      const std::set<std::string> neighbors = {neighbor_province.Get()};
+      province_neighbors_[main_province.Get()] = neighbors;
    }
 }
 
 
-void maps::MapDataImporter::RemoveNeighbor(const std::string& main_province, const std::string& neighbor_province)
+void maps::MapDataImporter::RemoveNeighbor(const MainProvince& main_province, const NeighborProvince& neighbor_province)
 {
-   if (const auto center_mapping = province_neighbors_.find(main_province); center_mapping != province_neighbors_.end())
+   if (const auto center_mapping = province_neighbors_.find(main_province.Get());
+       center_mapping != province_neighbors_.end())
    {
-      center_mapping->second.erase(neighbor_province);
+      center_mapping->second.erase(neighbor_province.Get());
    }
 }
 
 
-void maps::MapDataImporter::AddPointToBorder(const std::string& main_province,
-    const std::string& neighbor_province,
+void maps::MapDataImporter::AddPointToBorder(const MainProvince& main_province,
+    const NeighborProvince& neighbor_province,
     const Point position)
 {
-   auto borders_with_neighbors = borders_.find(main_province);
+   auto borders_with_neighbors = borders_.find(main_province.Get());
    if (borders_with_neighbors == borders_.end())
    {
       BordersWith new_borders_with_neighbors;
-      borders_.emplace(main_province, new_borders_with_neighbors);
-      borders_with_neighbors = borders_.find(main_province);
+      borders_.emplace(main_province.Get(), new_borders_with_neighbors);
+      borders_with_neighbors = borders_.find(main_province.Get());
    }
 
-   auto border = borders_with_neighbors->second.find(neighbor_province);
+   auto border = borders_with_neighbors->second.find(neighbor_province.Get());
    if (border == borders_with_neighbors->second.end())
    {
       BorderPoints new_border;
-      borders_with_neighbors->second.emplace(neighbor_province, new_border);
-      border = borders_with_neighbors->second.find(neighbor_province);
+      borders_with_neighbors->second.emplace(neighbor_province.Get(), new_border);
+      border = borders_with_neighbors->second.find(neighbor_province.Get());
    }
 
    if (border->second.empty())
@@ -243,16 +250,16 @@ void maps::MapDataImporter::AddPointToBorder(const std::string& main_province,
 
 void maps::MapDataImporter::ImportAdjacencies(const commonItems::ModFilesystem& mod_filesystem)
 {
-   const auto path = mod_filesystem.GetActualFileLocation("/map/adjacencies.csv");
+   const auto path = mod_filesystem.GetActualFileLocation("map/adjacencies.csv");
    if (!path)
    {
-      throw std::runtime_error("Could not find /map/adjacencies.csv");
+      throw std::runtime_error("Could not find map/adjacencies.csv");
    }
 
    std::ifstream adjacencies_file(*path);
    if (!adjacencies_file.is_open())
    {
-      throw std::runtime_error(fmt::format("Could not open {}", *path));
+      throw std::runtime_error(fmt::format("Could not open {}", path->string()));
    }
 
    while (!adjacencies_file.eof())
@@ -284,13 +291,13 @@ void maps::MapDataImporter::ImportAdjacencies(const commonItems::ModFilesystem& 
          const std::string second_province = matches[2];
          if (matches[3] != "impassable")
          {
-            AddNeighbor(first_province, second_province);
-            AddNeighbor(second_province, first_province);
+            AddNeighbor(MainProvince{first_province}, NeighborProvince{second_province});
+            AddNeighbor(MainProvince{second_province}, NeighborProvince{first_province});
          }
          else
          {
-            RemoveNeighbor(first_province, second_province);
-            RemoveNeighbor(second_province, first_province);
+            RemoveNeighbor(MainProvince{first_province}, NeighborProvince{second_province});
+            RemoveNeighbor(MainProvince{second_province}, NeighborProvince{first_province});
          }
       }
    }

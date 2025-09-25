@@ -3,9 +3,10 @@
 
 
 
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+
 #include <string_view>
 
-#include "external/commonItems/ModLoader/ModFilesystem.h"
 #include "src/configuration/configuration.h"
 #include "src/vic3_world/world/vic3_world.h"
 
@@ -15,7 +16,8 @@ namespace vic3
 {
 
 
-World ImportWorld(const configuration::Configuration& configuration);
+World ImportWorld(const configuration::Configuration& configuration,
+    const commonItems::ConverterVersion& converter_version);
 
 
 }  // namespace vic3

@@ -1,6 +1,7 @@
-#include "external/commonItems/ModLoader/ModFilesystem.h"
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "src/vic3_world/countries/vic3_country.h"
 #include "src/vic3_world/world/vic3_world_importer.h"
 
@@ -11,25 +12,29 @@ namespace vic3
 
 TEST(Vic3worldWorldVic3worldimporter, ExceptionForMissingSave)
 {
-   EXPECT_THROW(ImportWorld(configuration::Configuration{
-                    .save_game = "test_files/vic3_world/world/missing_save.vic3",
-                }),
+   EXPECT_THROW(ImportWorld(
+                    configuration::Configuration{
+                        .save_game = "test_files/vic3_world/world/missing_save.vic3",
+                    },
+                    commonItems::ConverterVersion()),
        std::runtime_error);
 }
 
 
 TEST(Vic3worldWorldVic3worldimporter, DefaultsAreCorrect)
 {
-   const auto world = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/empty_world",
-       .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/empty_save.vic3",
-   });
+   const auto world = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/empty_world",
+           .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/empty_save.vic3",
+       },
+       commonItems::ConverterVersion());
 
    EXPECT_TRUE(world.GetCountries().empty());
    EXPECT_TRUE(world.GetStates().empty());
-   EXPECT_FALSE(world.GetProvinceDefinitions().GetProvinceDefinitions().empty());
+   EXPECT_TRUE(world.GetProvinceDefinitions().GetProvinceDefinitions().empty());
    EXPECT_TRUE(world.GetAcquiredTechnologies().empty());
    EXPECT_EQ(world.GetLocalizations().size(), 0);
    EXPECT_TRUE(world.GetCultureDefinitions().empty());
@@ -40,12 +45,14 @@ TEST(Vic3worldWorldVic3worldimporter, DefaultsAreCorrect)
 
 TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
 {
-   const auto world = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/world",
-       .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/test_save.vic3",
-   });
+   const auto world = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/world",
+           .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/test_save.vic3",
+       },
+       commonItems::ConverterVersion());
 
    EXPECT_THAT(world.GetCountries(),
        testing::UnorderedElementsAre(testing::Pair(1,
@@ -97,9 +104,24 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
                        }}},
                }))));
    EXPECT_THAT(world.GetStates(),
-       testing::UnorderedElementsAre(testing::Pair(0, State({.provinces = {1, 2, 3}})),
-           testing::Pair(1, State({.id = 1, .owner_number = 3, .owner_tag = "TWO", .provinces = {10, 11, 12}})),
-           testing::Pair(2, State({.id = 2, .owner_number = 133, .provinces = {20}}))));
+       testing::UnorderedElementsAre(testing::Pair(0, State({.provinces = {1, 2, 3}, .region = "STATE_ZERO"})),
+           testing::Pair(1,
+               State({
+                   .id = 1,
+                   .owner_number = 3,
+                   .owner_tag = "TWO",
+                   .provinces = {10, 11, 12},
+                   .region = "STATE_ONE",
+                   .homelands = {"welsh"},
+               })),
+           testing::Pair(2,
+               State({
+                   .id = 2,
+                   .owner_number = 133,
+                   .provinces = {20},
+                   .region = "STATE_TWO",
+                   .homelands = {"scottish", "welsh"},
+               }))));
    EXPECT_THAT(world.GetStateRegions(),
        testing::UnorderedElementsAre(testing::Pair("STATE_LOMBARDY",
                                          StateRegion(
@@ -138,7 +160,10 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
    EXPECT_THAT(world.GetCountryRankings().GetMajorPowers(), testing::UnorderedElementsAre(9));
    EXPECT_EQ(world.GetLocalizations().size(), 1);
    ASSERT_TRUE(world.GetLocalizations().HasLocalization("test_localisation"));
-   EXPECT_EQ(world.GetLocalizations().GetLocalizationBlock("test_localisation")->GetLocalization("english"),
+   EXPECT_EQ(world.GetLocalizations()
+                 .GetLocalizationBlock("test_localisation")
+                 .value_or(commonItems::LocalizationBlock("", ""))
+                 .GetLocalization("english"),
        "testing testing 1 2 3");
    EXPECT_THAT(world.GetCharacters(),
        testing::UnorderedElementsAre(testing::Pair(1,
@@ -201,9 +226,27 @@ TEST(Vic3worldWorldVic3worldimporter, WorldCanBeImported)
                    .origin_country_id = 1,
                }))));
    EXPECT_THAT(world.GetInterestGroups(),
-       testing::UnorderedElementsAre(testing::Pair(1, InterestGroup("ig_devout", 1, 1, 0.34881F, true, {})),
-           testing::Pair(2, InterestGroup("ig_landowners", 1, 2, 0.15406F, false, {})),
-           testing::Pair(3, InterestGroup("ig_devout", 3, 5, 0.34652F, true, {}))));
+       testing::UnorderedElementsAre(testing::Pair(1,
+                                         InterestGroup("ig_devout",
+                                             InterestGroupCountryId{1},
+                                             InterestGroupLeader{1},
+                                             InterestGroupClout{0.34881F},
+                                             InterestGroupInGovernment{true},
+                                             {})),
+           testing::Pair(2,
+               InterestGroup("ig_landowners",
+                   InterestGroupCountryId{1},
+                   InterestGroupLeader{2},
+                   InterestGroupClout{0.15406F},
+                   InterestGroupInGovernment{false},
+                   {})),
+           testing::Pair(3,
+               InterestGroup("ig_devout",
+                   InterestGroupCountryId{3},
+                   InterestGroupLeader{5},
+                   InterestGroupClout{0.34652F},
+                   InterestGroupInGovernment{true},
+                   {}))));
    EXPECT_EQ(world.GetPlaythroughId(), 2311);
 }
 
@@ -214,12 +257,14 @@ TEST(Vic3worldWorldVic3worldimporter, ConversionDateIsLogged)
    std::streambuf* cout_buffer = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   const auto _ = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/world",
-       .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/test_save.vic3",
-   });
+   const auto _ = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/world",
+           .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/test_save.vic3",
+       },
+       commonItems::ConverterVersion());
 
    std::cout.rdbuf(cout_buffer);
 
@@ -233,12 +278,14 @@ TEST(Vic3worldWorldVic3worldimporter, StateWithInvalidOwnerIsLogged)
    std::streambuf* cout_buffer = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   const auto _ = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/world",
-       .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/test_save.vic3",
-   });
+   const auto _ = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/world",
+           .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/test_save.vic3",
+       },
+       commonItems::ConverterVersion());
 
    std::cout.rdbuf(cout_buffer);
 
@@ -252,31 +299,44 @@ TEST(Vic3worldWorldVic3worldimporter, ModsInSaveAreLogged)
    std::streambuf* cout_buffer = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());
 
-   const auto _ = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/world",
-       .vic3_steam_mod_path = "test_files/vic3_world/workshop/529340",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/test_save.vic3",
-   });
+   const auto _ = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/world",
+           .vic3_steam_mod_path = "test_files/vic3_world/workshop/529340",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/test_save.vic3",
+       },
+       commonItems::ConverterVersion());
 
    std::cout.rdbuf(cout_buffer);
 
+#ifdef WINDOWS
    EXPECT_THAT(log.str(),
        testing::HasSubstr(
-           "[INFO] \t\t->> Found potentially useful [Test Mod]: test_files/vic3_world/documents/mod/test_mod/"));
+           "[INFO] \t\t->> Found potentially useful [Test Mod]: test_files\\vic3_world\\documents\\mod\\test_mod"));
    EXPECT_THAT(log.str(),
        testing::HasSubstr("[INFO] \t\t->> Found potentially useful [Test Mod Two]: "
-                          "test_files/vic3_world/workshop/529340/test_mod_two/"));
+                          "test_files\\vic3_world\\workshop\\529340\\test_mod_two"));
+#else
+   EXPECT_THAT(log.str(),
+       testing::HasSubstr(
+           "[INFO] \t\t->> Found potentially useful [Test Mod]: test_files/vic3_world/documents/mod/test_mod"));
+   EXPECT_THAT(log.str(),
+       testing::HasSubstr("[INFO] \t\t->> Found potentially useful [Test Mod Two]: "
+                          "test_files/vic3_world/workshop/529340/test_mod_two"));
+#endif
 }
 
 TEST(Vic3worldWorldVic3worldimporter, PactsBecomeSubjectsAndOverlords)
 {
-   const auto world = ImportWorld(configuration::Configuration{
-       .vic3_directory = "test_files/vic3_world/world",
-       .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
-       .vic3_mod_path = "test_files/vic3_world/documents/mod",
-       .save_game = "test_files/vic3_world/world/test_save.vic3",
-   });
+   const auto world = ImportWorld(
+       configuration::Configuration{
+           .vic3_directory = "test_files/vic3_world/world",
+           .vic3_steam_mod_path = "test_files/vic3_world/documents/mod",
+           .vic3_mod_path = "test_files/vic3_world/documents/mod",
+           .save_game = "test_files/vic3_world/world/test_save.vic3",
+       },
+       commonItems::ConverterVersion());
    Country v1 = world.GetCountries().at(1);
    Country v3 = world.GetCountries().at(3);
    EXPECT_EQ(v1.GetPuppets(), std::set<int>({3}));

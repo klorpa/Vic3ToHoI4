@@ -1,40 +1,41 @@
 #include "src/vic3_world/countries/vic3_country_importer.h"
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/ParserHelpers.h"
-#include "external/commonItems/StringUtils.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/commonItems/StringUtils.h>
+#include <external/fmt/include/fmt/format.h>
 
 
 
 namespace
 {
 
-vic3::BudgetLevel parseBudgetLevel(const std::string& level_string)
+vic3::BudgetLevel ParseBudgetLevel(const std::string& level_string)
 {
    if (level_string == "very_low")
    {
-      return vic3::BudgetLevel::VeryLow;
+      return vic3::BudgetLevel::kVeryLow;
    }
    if (level_string == "low")
    {
-      return vic3::BudgetLevel::Low;
+      return vic3::BudgetLevel::kLow;
    }
    if (level_string == "medium")
    {
-      return vic3::BudgetLevel::Medium;
+      return vic3::BudgetLevel::kMedium;
    }
    if (level_string == "high")
    {
-      return vic3::BudgetLevel::High;
+      return vic3::BudgetLevel::kHigh;
    }
    if (level_string == "very_high")
    {
-      return vic3::BudgetLevel::VeryHigh;
+      return vic3::BudgetLevel::kVeryHigh;
    }
 
    Log(LogLevel::Error) << fmt::format("Unknown budget level {}", level_string);
-   return vic3::BudgetLevel::Medium;
+   return vic3::BudgetLevel::kMedium;
 }
 
 }  // namespace
@@ -49,6 +50,9 @@ vic3::CountryImporter::CountryImporter()
       options_.dynamic_adjective = commonItems::getString(input_stream);
    });
    dynamic_name_parser_.registerKeyword("use_overlord_prefix", [this](std::istream& input_stream) {
+      options_.use_overlord_prefix = (commonItems::getString(input_stream) == "yes");
+   });
+   dynamic_name_parser_.registerKeyword("state_region_template", [this](std::istream& input_stream) {
       options_.use_overlord_prefix = (commonItems::getString(input_stream) == "yes");
    });
 
@@ -67,6 +71,12 @@ vic3::CountryImporter::CountryImporter()
    country_parser_.registerKeyword("map_color", [this](std::istream& input_stream) {
       options_.color = commonItems::Color::Factory{}.getColor(input_stream);
    });
+   country_parser_.registerKeyword("states", [this](std::istream& input_stream) {
+      for (const auto& state_id: commonItems::getInts(input_stream))
+      {
+         options_.owned_states.emplace(state_id);
+      }
+   });
    country_parser_.registerKeyword("capital", [this](std::istream& input_stream) {
       const int64_t temp_number = commonItems::getLlong(input_stream);
       if (temp_number == 4294967295)
@@ -82,13 +92,13 @@ vic3::CountryImporter::CountryImporter()
       options_.country_type = commonItems::getString(input_stream);
    });
    country_parser_.registerKeyword("tax_level", [this](std::istream& input_stream) {
-      options_.tax_level = parseBudgetLevel(commonItems::getString(input_stream));
+      options_.tax_level = ParseBudgetLevel(commonItems::getString(input_stream));
    });
    country_parser_.registerKeyword("salaries", [this](std::istream& input_stream) {
-      options_.salary_level = parseBudgetLevel(commonItems::getString(input_stream));
+      options_.salary_level = ParseBudgetLevel(commonItems::getString(input_stream));
    });
    country_parser_.registerKeyword("mil_salaries", [this](std::istream& input_stream) {
-      options_.mil_salary_level = parseBudgetLevel(commonItems::getString(input_stream));
+      options_.mil_salary_level = ParseBudgetLevel(commonItems::getString(input_stream));
    });
    country_parser_.registerKeyword("civil_war", [this](std::istream& input_stream) {
       options_.is_civil_war = commonItems::getString(input_stream) == "yes";

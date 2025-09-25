@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "src/hoi4_world/military/battalion.h"
 #include "src/vic3_world/military/military_formation.h"
@@ -35,7 +36,7 @@ class UnitMapper
 
   private:
    TemplateMap templates_;
-   static std::set<std::string> warned_;
+   mutable std::set<std::string> warned_;
 };
 
 }  // namespace mappers

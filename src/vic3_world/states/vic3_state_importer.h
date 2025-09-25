@@ -3,10 +3,11 @@
 
 
 
+#include <external/commonItems/Parser.h>
+
 #include <istream>
 #include <set>
 
-#include "external/commonItems/Parser.h"
 #include "src/vic3_world/states/vic3_state.h"
 
 
@@ -30,6 +31,7 @@ class StateImporter
    bool incorporated_ = false;
    float infrastructure_ = 0.0F;
    std::set<int> provinces_;
+   std::string region_;
    int population_ = 0;
    int employed_population_ = 0;
 };

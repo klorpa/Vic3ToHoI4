@@ -3,10 +3,11 @@
 
 
 
+#include <external/commonItems/Parser.h>
+
 #include <set>
 #include <string>
 
-#include "external/commonItems/Parser.h"
 #include "src/mappers/technology/tech_mapping.h"
 
 
@@ -22,7 +23,7 @@ class TechMappingImporter
    TechMapping ImportTechMapping(std::istream& input_stream);
 
   private:
-   commonItems::parser parser;
+   commonItems::parser parser_;
 
    std::set<std::string> vic3_requirements_;
    std::optional<std::string> limit_;

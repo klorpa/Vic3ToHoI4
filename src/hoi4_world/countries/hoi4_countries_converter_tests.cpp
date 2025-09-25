@@ -1,9 +1,10 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <map>
 #include <sstream>
 #include <string>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/hoi4_world/countries/hoi4_countries_converter.h"
 #include "src/hoi4_world/countries/hoi4_country.h"
 #include "src/mappers/country/country_mapper.h"
@@ -69,11 +70,29 @@ TEST(Hoi4worldCountriesCountriesConverter, CountriesAreConverted)
        .buildings = vic3::Buildings({
            {1,
                {
-                   vic3::Building(vic3::BuildingType::Port, 1, 0, 1, std::vector<std::string>{"pm_port_3"}),
-                   vic3::Building(vic3::BuildingType::NavalBase, 1, 0, 1, std::vector<std::string>{"pm_navy"}),
+                   vic3::Building(vic3::kBuildingTypePort,
+                       1,
+                       vic3::GoodsSalesValue{0},
+                       vic3::StaffingLevel{1},
+                       std::vector<std::string>{"pm_port_3"}),
+                   vic3::Building(vic3::kBuildingTypeNavalBase,
+                       1,
+                       vic3::GoodsSalesValue{0},
+                       vic3::StaffingLevel{1},
+                       std::vector<std::string>{"pm_navy"}),
                }},
-           {2, {vic3::Building(vic3::BuildingType::Port, 2, 0, 1, std::vector<std::string>{"pm_port_1"})}},
-           {3, {vic3::Building(vic3::BuildingType::Port, 3, 0, 1, std::vector<std::string>{"pm_port_2"})}},
+           {2,
+               {vic3::Building(vic3::kBuildingTypePort,
+                   2,
+                   vic3::GoodsSalesValue{0},
+                   vic3::StaffingLevel{1},
+                   std::vector<std::string>{"pm_port_1"})}},
+           {3,
+               {vic3::Building(vic3::kBuildingTypePort,
+                   3,
+                   vic3::GoodsSalesValue{0},
+                   vic3::StaffingLevel{1},
+                   std::vector<std::string>{"pm_port_2"})}},
        }),
        .culture_definitions =
            {
@@ -116,9 +135,9 @@ TEST(Hoi4worldCountriesCountriesConverter, CountriesAreConverted)
        .vic3_state_ids_to_hoi4_state_ids{{1, 10}, {2, 20}, {3, 30}, {4, 40}},
        .hoi4_state_ids_to_owner{{10, "TAG"}, {20, "TWO"}, {30, "TWO"}, {40, "TWO"}},
    };
-   const vic3::World v3World = vic3::World(options);
+   const vic3::World v3_world = vic3::World(options);
 
-   const auto countries = ConvertCountries(v3World,
+   const auto countries = ConvertCountries(v3_world,
        world_mapper,
        commonItems::LocalizationDatabase{{}, {}},
        states,
@@ -134,49 +153,125 @@ TEST(Hoi4worldCountriesCountriesConverter, CountriesAreConverted)
            {std::nullopt, std::set<std::string>{"dest_technology_three", "dest_technology_four"}}},
    };
    const std::vector<EquipmentVariant> expected_legacy_ship_variants_one = {
-       EquipmentVariant("Test Legacy Ship Variant One", "legacy_test_ship", {"dest_technology_one"}, {}, {}),
-       EquipmentVariant("Test Legacy Ship Variant Four", "", {}, {"dest_technology_four"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Legacy Ship Variant One"},
+           EquipmentVariantType{"legacy_test_ship"},
+           {"dest_technology_one"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Legacy Ship Variant Four"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_four"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_legacy_ship_variants_two = {
-       EquipmentVariant("Test Legacy Ship Variant Two", "", {"dest_technology_three"}, {}, {}),
-       EquipmentVariant("Test Legacy Ship Variant Three", "", {}, {"dest_technology_two"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Legacy Ship Variant Two"},
+           EquipmentVariantType{""},
+           {"dest_technology_three"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Legacy Ship Variant Three"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_two"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_ship_variants_one = {
-       EquipmentVariant("Test Ship Variant One", "mtg_test_ship", {"dest_technology_one"}, {}, {}),
-       EquipmentVariant("Test Ship Variant Four", "", {}, {"dest_technology_four"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Ship Variant One"},
+           EquipmentVariantType{"mtg_test_ship"},
+           {"dest_technology_one"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Ship Variant Four"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_four"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_ship_variants_two = {
-       EquipmentVariant("Test Ship Variant Two", "", {"dest_technology_three"}, {}, {}),
-       EquipmentVariant("Test Ship Variant Three", "", {}, {"dest_technology_two"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Ship Variant Two"},
+           EquipmentVariantType{""},
+           {"dest_technology_three"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Ship Variant Three"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_two"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_plane_variants_one = {
-       EquipmentVariant("Test Plane Design One", "", {"dest_technology_one"}, {}, {}),
-       EquipmentVariant("Test Plane Design Four", "", {}, {"dest_technology_four"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Plane Design One"},
+           EquipmentVariantType{""},
+           {"dest_technology_one"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Plane Design Four"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_four"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_plane_variants_two = {
-       EquipmentVariant("Test Plane Design Two", "", {"dest_technology_three"}, {}, {}),
-       EquipmentVariant("Test Plane Design Three", "", {}, {"dest_technology_two"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Plane Design Two"},
+           EquipmentVariantType{""},
+           {"dest_technology_three"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Plane Design Three"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_two"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_tank_variants_one = {
-       EquipmentVariant("Test Tank Design One", "", {"dest_technology_one"}, {}, {}),
-       EquipmentVariant("Test Tank Design Four", "", {}, {"dest_technology_four"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Tank Design One"},
+           EquipmentVariantType{""},
+           {"dest_technology_one"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Tank Design Four"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_four"},
+           {}),
    };
    const std::vector<EquipmentVariant> expected_tank_variants_two = {
-       EquipmentVariant("Test Tank Design Two", "", {"dest_technology_three"}, {}, {}),
-       EquipmentVariant("Test Tank Design Three", "", {}, {"dest_technology_two"}, {}),
+       EquipmentVariant(EquipmentVariantName{"Test Tank Design Two"},
+           EquipmentVariantType{""},
+           {"dest_technology_three"},
+           {},
+           {}),
+       EquipmentVariant(EquipmentVariantName{"Test Tank Design Three"},
+           EquipmentVariantType{""},
+           {},
+           {"dest_technology_two"},
+           {}),
    };
    const std::vector<TaskForce> expected_task_forces = {
        TaskForce{
            .name = "1. Fleet",
-           .ships = {Ship("Test Ship 1", "test_ship", "mtg_test_ship", "legacy_test_ship", "Test Ship Variant One")},
+           .ships = {Ship(ShipOptions{
+               .name = "Test Ship 1",
+               .definition = "test_ship",
+               .equipment = "mtg_test_ship",
+               .legacy_equipment = "legacy_test_ship",
+               .version = "Test Ship Variant One",
+           })},
            .location = 10,
        },
    };
 
-   const mappers::GraphicsBlock expected_graphics_block_one{{{"army", {"GFX_general_0"}}},
-       "western_european_gfx",
-       "western_european_2d"};
-   const mappers::GraphicsBlock expected_graphics_block_two{{{"army", {"GFX_general_1"}}}, "asian_gfx", "asian_2d"};
+   const mappers::GraphicsBlock expected_graphics_block_one{
+       .portrait_paths = {{"army", {"GFX_general_0"}}},
+       .graphical_culture = "western_european_gfx",
+       .graphical_culture_2d = "western_european_2d",
+   };
+   const mappers::GraphicsBlock expected_graphics_block_two{
+       .portrait_paths = {{"army", {"GFX_general_1"}}},
+       .graphical_culture = "asian_gfx",
+       .graphical_culture_2d = "asian_2d",
+   };
 
    EXPECT_THAT(countries,
        testing::ElementsAre(testing::Pair("TAG",

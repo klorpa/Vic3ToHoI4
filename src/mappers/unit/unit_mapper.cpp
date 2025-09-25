@@ -1,13 +1,11 @@
 #include "src/mappers/unit/unit_mapper.h"
 
+#include <external/commonItems/Log.h>
+#include <external/fmt/include/fmt/format.h>
+
 #include <algorithm>
 #include <ranges>
 
-#include "external/fmt/include/fmt/format.h"
-
-
-
-std::set<std::string> mappers::UnitMapper::warned_;
 
 
 namespace
@@ -28,7 +26,7 @@ void WarnForMissingMapping(const std::string& pm, std::set<std::string>& warned)
 std::vector<hoi4::Battalion> mappers::UnitMapper::MakeBattalions(const std::vector<std::string>& methods,
     int scale) const
 {
-   int equip = 0;
+   int equipment = 0;
    BattalionMap current;
    for (const auto& pm: methods)
    {
@@ -39,17 +37,19 @@ std::vector<hoi4::Battalion> mappers::UnitMapper::MakeBattalions(const std::vect
          continue;
       }
 
-      equip += itr->second.equipment;
-      for (const auto& [ut, str]: itr->second.units)
+      equipment += itr->second.equipment;
+      for (const auto& [unit_type, strength]: itr->second.units)
       {
-         current[ut] += str * static_cast<float>(scale);
+         current[unit_type] += strength * static_cast<float>(scale);
       }
    }
 
    std::vector<hoi4::Battalion> units;
-   for (const auto& [ut, str]: current)
+   for (const auto& [unit_type, strength]: current)
    {
-      units.emplace_back(ut, equip, str);
+      units.emplace_back(unit_type,
+          hoi4::BattalionEquipmentScaleType{equipment},
+          hoi4::BattalionStrengthType{strength});
    }
    return units;
 }
@@ -57,7 +57,7 @@ std::vector<hoi4::Battalion> mappers::UnitMapper::MakeBattalions(const std::vect
 
 std::vector<hoi4::Battalion> mappers::UnitMapper::MakeBattalions(const vic3::MilitaryFormation& formation) const
 {
-   int equip = 0;
+   int equipment = 0;
    BattalionMap current;
    for (const auto& [unit_type, amount]: formation.units)
    {
@@ -68,17 +68,39 @@ std::vector<hoi4::Battalion> mappers::UnitMapper::MakeBattalions(const vic3::Mil
          continue;
       }
 
-      equip += itr->second.equipment;
-      for (const auto& [ut, str]: itr->second.units)
+      equipment += itr->second.equipment;
+      for (const auto& [ut, strength]: itr->second.units)
       {
-         current[ut] += str * static_cast<float>(amount);
+         current[ut] += strength * static_cast<float>(amount);
+      }
+   }
+   for (const vic3::CombatUnit& combat_unit: formation.combat_units)
+   {
+      if (!combat_unit.type)
+      {
+         continue;
+      }
+      const auto& itr = templates_.find(combat_unit.type.value());
+      if (itr == templates_.end())
+      {
+         WarnForMissingMapping(combat_unit.type.value(), warned_);
+         continue;
+      }
+
+      equipment += itr->second.equipment;
+      for (const auto& [unit_type, strength]: itr->second.units)
+      {
+         current[unit_type] += strength * static_cast<float>(combat_unit.current_manpower) / 1000.0F;
       }
    }
 
+
    std::vector<hoi4::Battalion> units;
-   for (const auto& [ut, str]: current)
+   for (const auto& [unit_type, strength]: current)
    {
-      units.emplace_back(ut, equip, str);
+      units.emplace_back(unit_type,
+          hoi4::BattalionEquipmentScaleType{equipment},
+          hoi4::BattalionStrengthType{strength});
    }
    return units;
 }

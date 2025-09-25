@@ -1,9 +1,11 @@
 #include "src/hoi4_world/map/strategic_regions.h"
 
+#include <external/commonItems/Log.h>
+
 #include <algorithm>
 #include <ranges>
 
-#include "external/commonItems/Log.h"
+#include "src/support/named_type.h"
 
 
 
@@ -47,16 +49,22 @@ std::optional<int> DetermineMostUsedRegion(const std::map<int, int>& used_region
 }
 
 
-void AddProvinceToRegion(int regionNumber, int provinceId, std::map<int, hoi4::StrategicRegion>& strategic_regions)
+using RegionNumber = NamedType<int, struct RegionNumberParameter>;
+using ProvinceID = NamedType<int, struct ProvinceIDParameter>;
+
+
+void AddProvinceToRegion(RegionNumber region_number,
+    ProvinceID province_id,
+    std::map<int, hoi4::StrategicRegion>& strategic_regions)
 {
-   auto region = strategic_regions.find(regionNumber);
+   const auto region = strategic_regions.find(region_number.Get());
    if (region == strategic_regions.end())
    {
-      Log(LogLevel::Warning) << "Strategic region " << regionNumber << " was not in the list of regions.";
+      Log(LogLevel::Warning) << "Strategic region " << region_number.Get() << " was not in the list of regions.";
       return;
    }
 
-   region->second.AddNewProvince(provinceId);
+   region->second.AddNewProvince(province_id.Get());
 }
 
 
@@ -113,7 +121,7 @@ void AddSurroundedProvincesToRegions(const std::map<int, int>& original_province
 
       if (const auto best_region = DetermineMostUsedRegion(used_regions); best_region)
       {
-         AddProvinceToRegion(*best_region, province, strategic_regions);
+         AddProvinceToRegion(RegionNumber{*best_region}, ProvinceID{province}, strategic_regions);
       }
    }
 }
@@ -129,18 +137,18 @@ void AddLeftoverProvincesToRegions(const std::set<int>& assigned_provinces,
       {
          continue;
       }
-      AddProvinceToRegion(strategic_region, province, strategic_regions);
+      AddProvinceToRegion(RegionNumber{strategic_region}, ProvinceID{province}, strategic_regions);
    }
 }
 
 
-void AddProvincesToRegion(int regionNumber,
+void AddProvincesToRegion(int region_number,
     const hoi4::State& state,
     std::map<int, hoi4::StrategicRegion>& strategic_regions)
 {
    for (const auto& province: state.GetProvinces())
    {
-      AddProvinceToRegion(regionNumber, province, strategic_regions);
+      AddProvinceToRegion(RegionNumber{region_number}, ProvinceID{province}, strategic_regions);
    }
 }
 

@@ -1,6 +1,8 @@
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "src/hoi4_world/military/convoy_distributor.h"
+
 
 
 namespace hoi4
@@ -20,7 +22,12 @@ TEST(Hoi4MilitaryConvoyDistributorTests, HandlesUnstaffedPort)
        {1, vic3::State({.id = 1})},
    };
    vic3::Buildings buildings(std::map<int, std::vector<vic3::Building>>{
-       {1, {vic3::Building(vic3::BuildingType::Port, 1, 0, 0, std::vector<std::string>{"dummy", "pm_port_1"})}},
+       {1,
+           {vic3::Building(vic3::kBuildingTypePort,
+               1,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{0},
+               std::vector<std::string>{"dummy", "pm_port_1"})}},
    });
    const vic3::World source_world = vic3::World(vic3::WorldOptions{.states = states, .buildings = buildings});
    ConvoyDistributor convoy(100, {{"pm_port", 1.0F}});
@@ -36,9 +43,24 @@ TEST(Hoi4MilitaryConvoyDistributorTests, WeightByProductionMethod)
        {3, vic3::State({.id = 3})},
    };
    vic3::Buildings buildings(std::map<int, std::vector<vic3::Building>>{
-       {1, {vic3::Building(vic3::BuildingType::Port, 1, 0, 1, std::vector<std::string>{"dummy", "pm_port_1"})}},
-       {2, {vic3::Building(vic3::BuildingType::Port, 2, 0, 1, std::vector<std::string>{"pm_port_2"})}},
-       {3, {vic3::Building(vic3::BuildingType::Port, 3, 0, 1, std::vector<std::string>{"pm_port_3"})}},
+       {1,
+           {vic3::Building(vic3::kBuildingTypePort,
+               1,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{1},
+               std::vector<std::string>{"dummy", "pm_port_1"})}},
+       {2,
+           {vic3::Building(vic3::kBuildingTypePort,
+               2,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{1},
+               std::vector<std::string>{"pm_port_2"})}},
+       {3,
+           {vic3::Building(vic3::kBuildingTypePort,
+               3,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{1},
+               std::vector<std::string>{"pm_port_3"})}},
    });
    const vic3::World source_world = vic3::World(vic3::WorldOptions{.states = states, .buildings = buildings});
    ConvoyDistributor convoy(111, {{"pm_port_1", 1.0F}, {"pm_port_2", 10.0F}, {"pm_port_3", 100.0F}});
@@ -56,9 +78,24 @@ TEST(Hoi4MilitaryConvoyDistributorTests, WeightByStaffingLevel)
        {3, vic3::State({.id = 3})},
    };
    vic3::Buildings buildings(std::map<int, std::vector<vic3::Building>>{
-       {1, {vic3::Building(vic3::BuildingType::Port, 1, 0, 1, std::vector<std::string>{"dummy", "pm_port_1"})}},
-       {2, {vic3::Building(vic3::BuildingType::Port, 2, 0, 10, std::vector<std::string>{"pm_port_1"})}},
-       {3, {vic3::Building(vic3::BuildingType::Port, 3, 0, 100, std::vector<std::string>{"pm_port_1"})}},
+       {1,
+           {vic3::Building(vic3::kBuildingTypePort,
+               1,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{1},
+               std::vector<std::string>{"dummy", "pm_port_1"})}},
+       {2,
+           {vic3::Building(vic3::kBuildingTypePort,
+               2,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{10},
+               std::vector<std::string>{"pm_port_1"})}},
+       {3,
+           {vic3::Building(vic3::kBuildingTypePort,
+               3,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{100},
+               std::vector<std::string>{"pm_port_1"})}},
    });
    const vic3::World source_world = vic3::World(vic3::WorldOptions{.states = states, .buildings = buildings});
    ConvoyDistributor convoy(111, {{"pm_port_1", 1.0F}, {"pm_port_2", 10.0F}, {"pm_port_3", 100.0F}});
@@ -77,8 +114,18 @@ TEST(Hoi4MilitaryConvoyDistributorTests, UnknownStateNoConvoys)
        {3, vic3::State({.id = 3})},
    };
    vic3::Buildings buildings(std::map<int, std::vector<vic3::Building>>{
-       {1, {vic3::Building(vic3::BuildingType::Port, 1, 0, 1, std::vector<std::string>{"dummy", "pm_port_1"})}},
-       {2, {vic3::Building(vic3::BuildingType::Port, 2, 0, 10, std::vector<std::string>{"dummy", "pm_port_1"})}},
+       {1,
+           {vic3::Building(vic3::kBuildingTypePort,
+               1,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{1},
+               std::vector<std::string>{"dummy", "pm_port_1"})}},
+       {2,
+           {vic3::Building(vic3::kBuildingTypePort,
+               2,
+               vic3::GoodsSalesValue{0},
+               vic3::StaffingLevel{10},
+               std::vector<std::string>{"dummy", "pm_port_1"})}},
    });
    const vic3::World source_world = vic3::World(vic3::WorldOptions{.states = states, .buildings = buildings});
    ConvoyDistributor convoy(111, {{"pm_port_1", 1.0F}, {"pm_port_2", 10.0F}, {"pm_port_3", 100.0F}});

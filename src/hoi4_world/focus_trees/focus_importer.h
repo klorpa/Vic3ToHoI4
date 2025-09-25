@@ -3,12 +3,13 @@
 
 
 
+#include <external/commonItems/Parser.h>
+
 #include <istream>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "external/commonItems/Parser.h"
 #include "src/hoi4_world/focus_trees/focus.h"
 
 
@@ -32,6 +33,7 @@ class FocusImporter
    std::vector<std::string> prerequisites_;
    std::optional<std::string> mutually_exclusive_;
    std::optional<std::string> bypass_;
+   bool tree_starter_ = false;
    int x_position_ = 0;
    int y_position_ = 0;
    std::optional<std::string> relative_position_id_;
@@ -40,6 +42,7 @@ class FocusImporter
    std::optional<std::string> available_;
    std::optional<std::string> cancel_if_invalid_;
    std::optional<std::string> continue_if_invalid_;
+   std::optional<std::string> will_lead_to_war_with_;
    std::optional<std::string> select_effect_;
    std::optional<std::string> complete_tooltip_;
    std::string completion_reward_;

@@ -3,7 +3,8 @@
 
 
 
-#include "external/commonItems/ModLoader/ModFilesystem.h"
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+
 #include "src/maps/province_definitions.h"
 
 
@@ -11,7 +12,7 @@
 namespace hoi4
 {
 
-[[nodiscard]] maps::ProvinceDefinitions::storage_type ImportProvinceDefinitions(
+[[nodiscard]] maps::ProvinceDefinitionsOptions ImportProvinceDefinitions(
     const commonItems::ModFilesystem& mod_filesystem);
 
 }

@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/elections/elections_importer.h"
 
 namespace vic3
@@ -27,7 +28,7 @@ TEST(Vic3WorldElectionsElectionsImporter, ElectionsCanBeImported)
    input << "\tlast_election = 1839.9.29\n";
    input << "}\n";
    input << "1 ={ \n";
-   input << "\tcountry = 2\n";
+   input << "\tcountry = 3019898882\n";
    input << "\tlast_election = 1935.11.4\n";
    input << "}\n";
    input << "\t}\n";
@@ -36,7 +37,8 @@ TEST(Vic3WorldElectionsElectionsImporter, ElectionsCanBeImported)
    const std::map<int, date> elections = ImportElections(input);
 
    EXPECT_THAT(elections,
-       testing::UnorderedElementsAre(testing::Pair(1, date{"1839.9.29"}), testing::Pair(2, date{"1935.11.4"})));
+       testing::UnorderedElementsAre(testing::Pair(1, date{"1839.9.29"}),
+           testing::Pair(-1275068414, date{"1935.11.4"})));
 }
 
 

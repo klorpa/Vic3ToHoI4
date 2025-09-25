@@ -1,8 +1,10 @@
 #include "src/vic3_world/technology/vic3_technology_importer.h"
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/Parser.h"
-#include "external/commonItems/ParserHelpers.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Parser.h>
+#include <external/commonItems/ParserHelpers.h>
+
+#include <sstream>
 
 
 
@@ -15,7 +17,7 @@ std::map<int, std::set<std::string>> vic3::ImportAcquiredTechnologies(std::istre
 
    commonItems::parser entry_parser;
    entry_parser.registerKeyword("country", [&country_number](std::istream& input_stream) {
-      country_number = commonItems::getInt(input_stream);
+      country_number = static_cast<int>(commonItems::getULlong(input_stream));
    });
    entry_parser.registerKeyword("acquired_technologies", [&acquired_technologies](std::istream& input_stream) {
       for (const auto& acquired_technology: commonItems::getStrings(input_stream))
@@ -27,7 +29,8 @@ std::map<int, std::set<std::string>> vic3::ImportAcquiredTechnologies(std::istre
 
    commonItems::parser database_parser;
    database_parser.registerRegex(commonItems::integerRegex,
-       [&entry_parser, &country_number, &acquired_technologies, &all_acquired_technologies](const std::string& unused,
+       [&entry_parser, &country_number, &acquired_technologies, &all_acquired_technologies](
+           [[maybe_unused]] const std::string& unused,
            std::istream& input_stream) {
           const auto entry_string = commonItems::stringOfItem(input_stream).getString();
           if (entry_string.find("{") == std::string::npos)

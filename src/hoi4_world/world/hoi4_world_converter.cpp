@@ -1,14 +1,16 @@
 #include "src/hoi4_world/world/hoi4_world_converter.h"
 
+#include <external/commonItems/Log.h>
+#include <external/fmt/include/fmt/format.h>
+
 #include <ranges>
 
-#include "external/commonItems/Log.h"
-#include "external/fmt/include/fmt/format.h"
 #include "hoi4_world.h"
 #include "src/hoi4_world/characters/hoi4_character.h"
 #include "src/hoi4_world/characters/hoi4_characters_converter.h"
 #include "src/hoi4_world/countries/hoi4_countries_converter.h"
 #include "src/hoi4_world/diplomacy/hoi4_war_converter.h"
+#include "src/hoi4_world/focus_trees/focus_tree_assembler.h"
 #include "src/hoi4_world/localizations/localizations_converter.h"
 #include "src/hoi4_world/map/buildings_creator.h"
 #include "src/hoi4_world/map/coastal_provinces_creator.h"
@@ -94,6 +96,26 @@ std::optional<int> GetCapitalStateNumber(int vic3_country_number,
 }
 
 
+void MarkCapitalsAsCapitals(const std::map<std::string, hoi4::Country>& countries, std::vector<hoi4::State>& states)
+{
+   for (const hoi4::Country& country: countries | std::views::values)
+   {
+      const std::optional<int> possible_capital = country.GetCapitalState();
+      if (!possible_capital)
+      {
+         continue;
+      }
+      if (*possible_capital - 1 > states.size())
+      {
+         continue;
+      }
+
+      hoi4::State& capital_state = states.at(*possible_capital - 1);
+      capital_state.SetIsCapital(true);
+   }
+}
+
+
 void IncreaseAirBasesInCapitals(const std::map<std::string, hoi4::Country>& countries, std::vector<hoi4::State>& states)
 {
    for (const hoi4::Country& country: countries | std::views::values)
@@ -127,7 +149,7 @@ void IncreaseVictoryPointsInCapitals(std::vector<hoi4::State>& states,
    for (int vic3_country_number: country_rankings.GetScoredCountries() | std::views::values)
    {
       std::optional<int> possible_capital_state_number =
-          GetCapitalStateNumber(vic3_country_number, country_mapper, countries, states.size());
+          GetCapitalStateNumber(vic3_country_number, country_mapper, countries, static_cast<int>(states.size()));
       if (!possible_capital_state_number)
       {
          continue;
@@ -231,11 +253,7 @@ hoi4::World hoi4::ConvertWorld(const commonItems::ModFilesystem& hoi4_mod_filesy
     std::future<hoi4::WorldFramework> world_framework_future,
     const configuration::Configuration& config)
 {
-   std::map<std::string, hoi4::Country> countries;
-
    Log(LogLevel::Info) << "Creating Hoi4 world";
-
-
 
    std::map<std::string, vic3::ProvinceType> vic3_significant_provinces =
        GatherVic3SignificantProvinces(source_world.GetStateRegions());
@@ -277,7 +295,7 @@ hoi4::World hoi4::ConvertWorld(const commonItems::ModFilesystem& hoi4_mod_filesy
 
    std::map<int, hoi4::Character> characters;
    std::map<std::string, mappers::CultureQueue> culture_queues;
-   countries = ConvertCountries(source_world,
+   std::map<std::string, hoi4::Country> countries = ConvertCountries(source_world,
        world_mapper,
        source_world.GetLocalizations(),
        states,
@@ -297,6 +315,7 @@ hoi4::World hoi4::ConvertWorld(const commonItems::ModFilesystem& hoi4_mod_filesy
        MapPowers(source_world.GetCountryRankings().GetGreatPowers(), world_mapper.country_mapper);
    std::set<std::string> major_powers =
        MapPowers(source_world.GetCountryRankings().GetMajorPowers(), world_mapper.country_mapper);
+   MarkCapitalsAsCapitals(countries, states.states);
    IncreaseAirBasesInCapitals(countries, states.states);
    IncreaseVictoryPointsInCapitals(states.states,
        source_world.GetCountryRankings(),
@@ -320,11 +339,9 @@ hoi4::World hoi4::ConvertWorld(const commonItems::ModFilesystem& hoi4_mod_filesy
 
    hoi4::Railways railways = railways_future.get();
    hoi4::Buildings buildings = buildings_future.get();
+   ProgressManager::AddProgress(5);
 
-   const std::map<std::string, Role> roles = ImportRoles();
-   [[maybe_unused]] const auto role_combinations = CreateStories(roles, countries);
-
-   return hoi4::World(hoi4::WorldOptions{.countries = countries,
+   hoi4::World world(hoi4::WorldOptions{.countries = countries,
        .great_powers = great_powers,
        .major_powers = major_powers,
        .states = states,
@@ -333,4 +350,48 @@ hoi4::World hoi4::ConvertWorld(const commonItems::ModFilesystem& hoi4_mod_filesy
        .railways = railways,
        .localizations = localizations,
        .characters = characters});
+
+   std::set<DecisionsCategory> decisions_categories;
+   std::map<std::string, std::vector<Decision>> decisions_in_categories;
+   std::map<std::string, std::vector<Event>> country_events;
+
+   const std::map<std::string, Role> roles = ImportRoles();
+   std::map<std::string, Country>& modifiable_countries = world.GetModifiableCountries();
+   for (const auto& [tag, country_roles]: CreateStories(roles, world, modifiable_countries))
+   {
+      auto country_itr = modifiable_countries.find(tag);
+      if (country_itr == modifiable_countries.end())
+      {
+         Log(LogLevel::Warning) << fmt::format("Country {} in story could not be found.", tag);
+         continue;
+      }
+
+      for (const Role& country_role: country_roles)
+      {
+         for (const DecisionsCategory& role_category: country_role.GetDecisionsCategories())
+         {
+            decisions_categories.insert(role_category);
+         }
+         for (const auto& [category, decisions]: country_role.GetDecisionsInCategories())
+         {
+            decisions_in_categories.emplace(category, decisions);
+         }
+         for (const Event& event: country_role.GetEvents())
+         {
+            if (auto [itr, success] = country_events.emplace(tag, std::vector{event}); !success)
+            {
+               itr->second.push_back(event);
+            }
+         }
+      }
+
+      const FocusTree tree = AssembleTree(country_roles, tag, world);
+      country_itr->second.SetFocusTree(tree);
+   }
+
+   world.SetDecisionsCategories(decisions_categories);
+   world.SetDecisions(decisions_in_categories);
+   world.SetCountryEvents(country_events);
+
+   return world;
 }

@@ -1,5 +1,6 @@
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "src/vic3_world/countries/vic3_country.h"
 #include "src/vic3_world/country_rankings/country_rankings_importer.h"
 #include "src/vic3_world/world/vic3_world.h"
@@ -82,9 +83,9 @@ TEST(Vic3worldCountriesVic3country, PowerRankWorks)
        .country_rankings = country_rankings,
    });
 
-   EXPECT_EQ(c1.GetCountryRankCategory(world), RankCategory::GreatPower);
-   EXPECT_EQ(c2.GetCountryRankCategory(world), RankCategory::MajorPower);
-   EXPECT_EQ(c3.GetCountryRankCategory(world), RankCategory::MinorPower);
+   EXPECT_EQ(c1.GetCountryRankCategory(world), RankCategory::kGreatPower);
+   EXPECT_EQ(c2.GetCountryRankCategory(world), RankCategory::kMajorPower);
+   EXPECT_EQ(c3.GetCountryRankCategory(world), RankCategory::kMinorPower);
 }
 
 

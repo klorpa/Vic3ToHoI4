@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/laws/laws_importer.h"
 
 
@@ -33,11 +34,11 @@ TEST(Vic3WorldLawsLawsImporter, LawsCanBeImported)
    input << "\tactive = yes\n";
    input << "}\n";
    input << "2 = {\n";
-   input << "\tlaw = test_law_one	country = 2\n";
+   input << "\tlaw = test_law_one	country = 3019898882\n";
    input << "\tactive = yes\n";
    input << "}\n";
    input << "3 = {\n";
-   input << "\tlaw = test_law_three	country = 2\n";
+   input << "\tlaw = test_law_three	country = 3019898882\n";
    input << "\tactive = yes\n";
    input << "}\n";
    input << "\t}\n";
@@ -47,7 +48,7 @@ TEST(Vic3WorldLawsLawsImporter, LawsCanBeImported)
 
    EXPECT_THAT(laws,
        testing::UnorderedElementsAre(testing::Pair(1, std::set<std::string>{"test_law_one", "test_law_two"}),
-           testing::Pair(2, std::set<std::string>{"test_law_one", "test_law_three"})));
+           testing::Pair(-1275068414, std::set<std::string>{"test_law_one", "test_law_three"})));
 }
 
 

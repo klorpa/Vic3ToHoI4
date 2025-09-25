@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/technology/vic3_technology_importer.h"
 
 
@@ -24,7 +25,7 @@ TEST(Vic3WorldTechnologyVic3technologyimporterTests, AcquiredTechnologiesCanBeIm
    input << "={\n";
    input << "\tdatabase={\n";
    input << "123456={\n";
-   input << "\tcountry=123456\n";
+   input << "\tcountry=3019898882\n";
    input << "\tacquired_technologies={ technology technology_two }\n";
    input << "}\n";
    input << "1={\n";
@@ -41,7 +42,7 @@ TEST(Vic3WorldTechnologyVic3technologyimporterTests, AcquiredTechnologiesCanBeIm
    EXPECT_THAT(technologies,
        testing::UnorderedElementsAre(testing::Pair(1, std::set<std::string>{"technology_three"}),
            testing::Pair(2, std::set<std::string>{}),
-           testing::Pair(123456, std::set<std::string>{"technology", "technology_two"})));
+           testing::Pair(-1275068414, std::set<std::string>{"technology", "technology_two"})));
 }
 
 

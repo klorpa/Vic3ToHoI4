@@ -1,19 +1,23 @@
 #include "src/out_hoi4/map/out_strategic_region.h"
 
+#include <external/fmt/include/fmt/format.h>
+
 #include <fstream>
 
-#include "external/fmt/include/fmt/format.h"
+
+
+using std::filesystem::path;
 
 
 
-void out::OutputStrategicRegion(std::string_view output_name, const hoi4::StrategicRegion& strategic_region)
+void out::OutputStrategicRegion(const path& output_name, const hoi4::StrategicRegion& strategic_region)
 {
-   const auto strategic_region_file_name =
-       fmt::format("output/{}/map/strategicregions/{}", output_name, strategic_region.GetFilename());
+   const path strategic_region_file_name =
+       "output" / output_name / "map/strategicregions" / strategic_region.GetFilename();
    std::ofstream strategic_region_file(strategic_region_file_name);
    if (!strategic_region_file.is_open())
    {
-      throw std::runtime_error(fmt::format("Could not create {}", strategic_region_file_name));
+      throw std::runtime_error(fmt::format("Could not create {}", strategic_region_file_name.string()));
    }
 
    strategic_region_file << "\n";
@@ -28,7 +32,7 @@ void out::OutputStrategicRegion(std::string_view output_name, const hoi4::Strate
    }
    strategic_region_file << "\n";
    strategic_region_file << "\t}\n";
-   if (strategic_region.hasStaticModifiers())
+   if (strategic_region.HasStaticModifiers())
    {
       strategic_region_file << "\tstatic_modifiers={\n";
       for (const auto& modifier: strategic_region.GetStaticModifiers())
@@ -38,10 +42,10 @@ void out::OutputStrategicRegion(std::string_view output_name, const hoi4::Strate
       strategic_region_file << "\n";
       strategic_region_file << "\t}\n";
    }
-   auto navalTerrain = strategic_region.GetNavalTerrain();
-   if (navalTerrain)
+   auto naval_terrain = strategic_region.GetNavalTerrain();
+   if (naval_terrain)
    {
-      strategic_region_file << "\tnaval_terrain=" << *navalTerrain << "\n";
+      strategic_region_file << "\tnaval_terrain=" << *naval_terrain << "\n";
    }
    strategic_region_file << "\tweather" << strategic_region.GetWeather() << "\n";
    strategic_region_file << "}";

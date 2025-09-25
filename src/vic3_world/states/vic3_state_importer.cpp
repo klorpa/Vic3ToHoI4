@@ -1,16 +1,17 @@
 #include "src/vic3_world/states/vic3_state_importer.h"
 
-#include <charconv>
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/ParserHelpers.h>
 
-#include "external/commonItems/CommonRegexes.h"
-#include "external/commonItems/ParserHelpers.h"
+#include <charconv>
 
 
 
 vic3::StateImporter::StateImporter()
 {
    state_parser_.registerKeyword("country", [this](std::istream& input_stream) {
-      owner_number_ = commonItems::getInt(input_stream);
+      owner_number_ = static_cast<int>(commonItems::getULlong(input_stream));
    });
    state_parser_.registerKeyword("incorporation", [this](std::istream& input_stream) {
       if (commonItems::getDouble(input_stream) >= 1.0F)
@@ -23,6 +24,9 @@ vic3::StateImporter::StateImporter()
    });
    state_parser_.registerKeyword("provinces", [this](std::istream& input_stream) {
       provinces_parser_.parseStream(input_stream);
+   });
+   state_parser_.registerKeyword("region", [this](std::istream& input_stream) {
+      region_ = commonItems::getString(input_stream);
    });
    state_parser_.registerKeyword("pop_statistics", [this](std::istream& input_stream) {
       pop_statistics_parser_.parseStream(input_stream);
@@ -111,6 +115,7 @@ vic3::State vic3::StateImporter::ImportState(std::string_view key, std::istream&
        .incorporated = incorporated_,
        .infrastructure = infrastructure_,
        .provinces = provinces_,
+       .region = region_,
        .population = population_,
        .employed_population = employed_population_});
 }

@@ -1,7 +1,8 @@
-﻿#include <ranges>
+﻿#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <ranges>
+
 #include "src/hoi4_world/characters/hoi4_characters_converter.h"
 #include "src/mappers/character/character_trait_mapper_importer.h"
 #include "src/mappers/character/leader_type_mapper_importer.h"
@@ -377,7 +378,7 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, CouncilsAreCreated)
 
    const auto leader_data = std::optional<Leader>({.sub_ideology = "sub_ideology"});
    const auto expected_council = Character({
-       .id = Character::GetGenId(),
+       .id = 1000,
        .first_name = "The",
        .last_name = "Council",
        .leader_data = leader_data,
@@ -396,7 +397,7 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, CouncilsAreCreated)
        characters,
        culture_queues);
 
-   EXPECT_THAT(characters, testing::UnorderedElementsAre(testing::Pair(Character::GetGenId() - 1, expected_council)));
+   EXPECT_THAT(characters, testing::UnorderedElementsAre(testing::Pair(1000, expected_council)));
 }
 
 
@@ -406,17 +407,17 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, NewlyGeneratedCharactersDontCol
    // Input council laws, see that newly generated character resolves collision
    // SrcCharacter intact, old council with ID 1001, new council with 1002
    std::map<int, Character> characters{
-       {Character::GetGenId() + 1, hoi4::Character({.id = Character::GetGenId() + 1})},
+       {1001, hoi4::Character({.id = 1001})},
    };
    std::map<std::string, mappers::CultureQueue> culture_queues;
    const std::map<int, vic3::Character> source_characters{
-       {Character::GetGenId(), vic3::Character({.id = Character::GetGenId()})},
+       {1000, vic3::Character({.id = 1000})},
    };
    const auto leader_type_mapper = mappers::ImportLeaderTypeMapper("configurables/leader_type_mappings.txt");
 
    const auto leader_data = std::optional<Leader>({.sub_ideology = "sub_ideology"});
    const auto expected_council = Character({
-       .id = Character::GetGenId() + 2,
+       .id = 1002,
        .first_name = "The",
        .last_name = "Council",
        .leader_data = leader_data,
@@ -436,9 +437,8 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, NewlyGeneratedCharactersDontCol
        culture_queues);
 
    EXPECT_THAT(characters,
-       testing::UnorderedElementsAre(
-           testing::Pair(Character::GetGenId() - 2, Character({.id = Character::GetGenId() - 2})),
-           testing::Pair(Character::GetGenId() - 1, expected_council)));
+       testing::UnorderedElementsAre(testing::Pair(1001, Character({.id = 1001})),
+           testing::Pair(1002, expected_council)));
 }
 
 
@@ -448,9 +448,27 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, PrimeMinistersAreFoundInCoaliti
    std::map<std::string, mappers::CultureQueue> culture_queues;
    const auto leader_type_mapper = mappers::ImportLeaderTypeMapper("configurables/leader_type_mappings.txt");
    const std::map<int, vic3::InterestGroup> igs = {
-       {1, vic3::InterestGroup{"", 1, 4, 25.0F, true, {}}},
-       {2, vic3::InterestGroup{"", 1, 2, 35.0F, true, {}}},
-       {3, vic3::InterestGroup{"", 1, 3, 40.0F, false, {}}},
+       {1,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{4},
+               InterestGroupClout{25.0F},
+               InterestGroupInGovernment{true},
+               {}}},
+       {2,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{2},
+               InterestGroupClout{35.0F},
+               InterestGroupInGovernment{true},
+               {}}},
+       {3,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{3},
+               InterestGroupClout{40.0F},
+               InterestGroupInGovernment{false},
+               {}}},
    };
    const auto head_of_state = vic3::Character({
        .id = 1,
@@ -519,9 +537,27 @@ TEST(Hoi4worldCharactersHoi4charactersconverter, PrimeMinistersAreFoundInLeaderP
    std::map<std::string, mappers::CultureQueue> culture_queues;
    const auto leader_type_mapper = mappers::ImportLeaderTypeMapper("configurables/leader_type_mappings.txt");
    const std::map<int, vic3::InterestGroup> igs = {
-       {1, vic3::InterestGroup{"", 1, 4, 35.0F, true, {}}},
-       {2, vic3::InterestGroup{"", 1, 2, 25.0F, true, {}}},
-       {3, vic3::InterestGroup{"", 1, 3, 40.0F, false, {}}},
+       {1,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{4},
+               InterestGroupClout{35.0F},
+               InterestGroupInGovernment{true},
+               {}}},
+       {2,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{2},
+               InterestGroupClout{25.0F},
+               InterestGroupInGovernment{true},
+               {}}},
+       {3,
+           vic3::InterestGroup{"",
+               InterestGroupCountryId{1},
+               InterestGroupLeader{3},
+               InterestGroupClout{40.0F},
+               InterestGroupInGovernment{false},
+               {}}},
    };
    const auto head_of_state = vic3::Character({
        .id = 1,

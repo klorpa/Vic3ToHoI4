@@ -1,6 +1,6 @@
 #include "src/hoi4_world/military/task_force_template.h"
 
-#include "external/fmt/include/fmt/format.h"
+#include <external/fmt/include/fmt/format.h>
 
 bool hoi4::TaskForceTemplate::AllVariantsActive(const std::set<std::string>& active_variants) const
 {
@@ -23,7 +23,7 @@ bool hoi4::TaskForceTemplate::AllVariantsActive(const std::set<std::string>& act
 }
 
 void hoi4::TaskForceTemplate::AddShipsIfPossible(std::vector<hoi4::Ship>& ships,
-    std::map<std::string, int>& shipCounts,
+    std::map<std::string, int>& ship_counts,
     std::map<std::string, float>& points) const
 {
    int multiple = 1000;
@@ -39,19 +39,21 @@ void hoi4::TaskForceTemplate::AddShipsIfPossible(std::vector<hoi4::Ship>& ships,
 
    for (const auto& [pm, amount]: cost_)
    {
-      points[pm] -= amount * multiple;
+      points[pm] -= amount * static_cast<float>(multiple);
    }
    for (int i = 0; i < multiple; ++i)
    {
       for (const auto& ship: ships_)
       {
-         shipCounts[ship.GetName()]++;
-         std::string ship_name = fmt::format("{} {}", ship.GetName().c_str(), shipCounts[ship.GetName()]);
-         ships.emplace_back(ship_name,
-             ship.GetDefinition(),
-             ship.GetEquipment(),
-             ship.GetLegacyEquipment(),
-             ship.GetVersion());
+         ship_counts[ship.GetName()]++;
+         const std::string ship_name = fmt::format("{} {}", ship.GetName().c_str(), ship_counts[ship.GetName()]);
+         ships.emplace_back(ShipOptions{
+             .name = ship_name,
+             .definition = ship.GetDefinition(),
+             .equipment = ship.GetEquipment(),
+             .legacy_equipment = ship.GetLegacyEquipment(),
+             .version = ship.GetVersion(),
+         });
       }
    }
 }

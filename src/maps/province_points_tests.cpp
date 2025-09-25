@@ -1,4 +1,5 @@
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "src/maps/province_points.h"
 
 
@@ -10,35 +11,45 @@ TEST(MapsProvincepoints, CentermostIsOriginIfNoPoints)
 {
    const ProvincePoints province_points(std::set<Point>{});
 
-   constexpr Point expected_point{0, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 0, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CenterPointIsAverageLatitude)
 {
-   const ProvincePoints province_points({Point{0, 1}, Point{0, 2}, Point{0, 3}, Point{0, 4}});
+   const ProvincePoints province_points({
+       Point{.x = 0, .y = 1},
+       Point{.x = 0, .y = 2},
+       Point{.x = 0, .y = 3},
+       Point{.x = 0, .y = 4},
+   });
 
-   constexpr Point expected_point{0, 2};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 0, .y = 2};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CenterPointIsAverageLongitude)
 {
-   const ProvincePoints province_points({Point{1, 0}, Point{2, 0}, Point{3, 0}, Point{4, 0}});
+   const ProvincePoints province_points({
+       Point{.x = 1, .y = 0},
+       Point{.x = 2, .y = 0},
+       Point{.x = 3, .y = 0},
+       Point{.x = 4, .y = 0},
+   });
 
-   constexpr Point expected_point{2, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 2, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CentermostPointWhenCenterNotControlled)
 {
-   const ProvincePoints province_points({Point{1, 0}, Point{3, 0}, Point{10, 0}});
+   const ProvincePoints province_points({Point{.x = 1, .y = 0}, Point{.x = 3, .y = 0}, Point{.x = 10, .y = 0}});
 
-   constexpr Point expected_point{3, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 3, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
@@ -46,46 +57,46 @@ TEST(MapsProvincepoints, CentermostIsOriginIfNoPointsWhenAddingPoints)
 {
    const ProvincePoints province_points;
 
-   constexpr Point expected_point{0, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 0, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CenterPointIsAverageLatitudeWhenAddingPoints)
 {
    ProvincePoints province_points;
-   province_points.AddPoint(Point{0, 1});
-   province_points.AddPoint(Point{0, 2});
-   province_points.AddPoint(Point{0, 3});
-   province_points.AddPoint(Point{0, 4});
+   province_points.AddPoint(Point{.x = 0, .y = 1});
+   province_points.AddPoint(Point{.x = 0, .y = 2});
+   province_points.AddPoint(Point{.x = 0, .y = 3});
+   province_points.AddPoint(Point{.x = 0, .y = 4});
 
-   constexpr Point expected_point{0, 2};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 0, .y = 2};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CenterPointIsAverageLongitudeWhenAddingPoints)
 {
    ProvincePoints province_points;
-   province_points.AddPoint(Point{1, 0});
-   province_points.AddPoint(Point{2, 0});
-   province_points.AddPoint(Point{3, 0});
-   province_points.AddPoint(Point{4, 0});
+   province_points.AddPoint(Point{.x = 1, .y = 0});
+   province_points.AddPoint(Point{.x = 2, .y = 0});
+   province_points.AddPoint(Point{.x = 3, .y = 0});
+   province_points.AddPoint(Point{.x = 4, .y = 0});
 
-   constexpr Point expected_point{2, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 2, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 
 TEST(MapsProvincepoints, CentermostPointWhenCenterNotControlledWhenAddingPoints)
 {
    ProvincePoints province_points;
-   province_points.AddPoint(Point{1, 0});
-   province_points.AddPoint(Point{3, 0});
-   province_points.AddPoint(Point{10, 0});
+   province_points.AddPoint(Point{.x = 1, .y = 0});
+   province_points.AddPoint(Point{.x = 3, .y = 0});
+   province_points.AddPoint(Point{.x = 10, .y = 0});
 
-   constexpr Point expected_point{3, 0};
-   EXPECT_EQ(province_points.GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 3, .y = 0};
+   EXPECT_EQ(province_points.GetCentermostPoint(), kExpectedPoint);
 }
 
 }  // namespace maps

@@ -1,22 +1,23 @@
-#ifndef OUT_HOI4_OUT_MOD_H_
-#define OUT_HOI4_OUT_MOD_H_
+#ifndef OUT_HOI4_OUT_MOD_H
+#define OUT_HOI4_OUT_MOD_H
 
 
 
+#include <external/commonItems/GameVersion.h>
+
+#include <filesystem>
 #include <string_view>
-
-#include "external/commonItems/GameVersion.h"
 
 
 
 namespace out
 {
 
-void ClearOutputFolder(std::string_view output_name);
+void ClearOutputFolder(const std::filesystem::path& output_name);
 void OutputMod(std::string_view output_name, const GameVersion& game_version);
 
 }  // namespace out
 
 
 
-#endif  // OUT_HOI4_OUT_MOD_H_
+#endif  // OUT_HOI4_OUT_MOD_H

@@ -1,5 +1,8 @@
 #include "src/hoi4_world/states/hoi4_states_converter.h"
 
+#include <external/commonItems/Log.h>
+#include <external/fmt/include/fmt/format.h>
+#include <external/fmt/include/fmt/ranges.h>
 #include <src/hoi4_world/world/hoi4_world.h>
 
 #include <algorithm>
@@ -11,18 +14,18 @@
 #include <ranges>
 #include <vector>
 
-#include "external/commonItems/Log.h"
-#include "external/fmt/include/fmt/format.h"
 #include "src/configuration/configuration.h"
 #include "src/maps/map_data.h"
 #include "src/out_hoi4/world/out_world.h"
 #include "src/support/converter_utils.h"
+#include "src/support/named_type.h"
+
 
 
 namespace
 {
 
-constexpr int MAX_FACTORY_SLOTS = 12;
+constexpr int kMaxFactorySlots = 12;
 const std::vector<std::string> kResourceNames = {"steel", "oil", "tungsten", "aluminium", "chromium", "rubber"};
 const std::map<std::string, int> kNavalBasePoints = {{"port", 5}, {"city", 4}, {"mine", 3}, {"farm", 2}, {"wood", 1}};
 
@@ -204,10 +207,10 @@ std::vector<int> SortVic3StatesByIndustryDescending(const vic3::Buildings& vic3_
 {
    std::vector<int> vic3_state_ids;
    std::ranges::copy(vic3_state_id_to_hoi4_provinces | std::views::keys, std::back_inserter(vic3_state_ids));
-   const auto ByVic3Industry = [vic3_buildings](const int& lhs, const int& rhs) {
+   const auto by_vic3_industry = [vic3_buildings](const int& lhs, const int& rhs) {
       return vic3_buildings.GetTotalGoodSalesValueInState(lhs) > vic3_buildings.GetTotalGoodSalesValueInState(rhs);
    };
-   std::ranges::sort(vic3_state_ids, ByVic3Industry);
+   std::ranges::sort(vic3_state_ids, by_vic3_industry);
    return vic3_state_ids;
 }
 
@@ -434,7 +437,8 @@ std::tuple<int, int, int> ConvertIndustry(const float& total_factories,
     const hoi4::CoastalProvinces& coastal_provinces,
     std::unordered_map<std::string, FactoriesStruct>& accumulator)
 {
-   const float factories = total_factories * province_set.size() / num_hoi4_provinces;
+   const float factories =
+       total_factories * static_cast<float>(province_set.size()) / static_cast<float>(num_hoi4_provinces);
 
    int civilian_factories = 0;
    int military_factories = 0;
@@ -442,7 +446,7 @@ std::tuple<int, int, int> ConvertIndustry(const float& total_factories,
 
    if (!accumulator.contains(state_owner))
    {
-      accumulator[state_owner] = {0, 0, 0};
+      accumulator[state_owner] = {.military = 0, .civilian = 0, .docks = 0};
    }
    auto& country_factories = accumulator[state_owner];
    if (IsStateCoastal(province_set, coastal_provinces))
@@ -468,7 +472,7 @@ std::tuple<int, int, int> ConvertIndustry(const float& total_factories,
                                    (IsStateCoastal(province_set, {}) ? std::max(0.0F, country_factories.docks) : 0.0F);
    const int factories_floor = static_cast<int>(std::round(std::max(factories, applied_factories)));
 
-   for (int i = 0; i < std::min(factories_floor, MAX_FACTORY_SLOTS); i++)
+   for (int i = 0; i < std::min(factories_floor, kMaxFactorySlots); i++)
    {
       if (IsStateCoastal(province_set, coastal_provinces) && (country_factories.docks > 0.0F))
       {
@@ -495,8 +499,8 @@ float CalculateNavalBaseRatio(const std::set<int>& hoi4_provinces,
     const hoi4::WorldFramework& world_framework,
     int total_coastal_provinces)
 {
-   const int coastal_province_count = std::ranges::count_if(hoi4_provinces, [&world_framework](int province_id) {
-      return world_framework.coastal_provinces.contains(province_id);
+   const int64_t coastal_province_count = std::ranges::count_if(hoi4_provinces, [&world_framework](int province_id) {
+      return world_framework.coastal_provinces.Contains(province_id);
    });
    return static_cast<float>(coastal_province_count) / static_cast<float>(total_coastal_provinces);
 }
@@ -504,10 +508,9 @@ float CalculateNavalBaseRatio(const std::set<int>& hoi4_provinces,
 
 float FindNavalBaseStaffing(const vic3::World& source_world, int source_state_id)
 {
-   float total_naval_bases = 0;
    std::vector<vic3::Building> buildings = source_world.GetBuildings().GetBuildingsInState(source_state_id);
-   auto maybe_building = std::ranges::find_if(buildings, [](const vic3::Building& b) {
-      return b.GetType() == vic3::BuildingType::NavalBase;
+   const auto maybe_building = std::ranges::find_if(buildings, [](const vic3::Building& b) {
+      return b.GetType() == vic3::kBuildingTypeNavalBase;
    });
    if (maybe_building != buildings.end())
    {
@@ -579,13 +582,15 @@ std::tuple<std::optional<int>, std::optional<int>> DetermineNavalBase(const vic3
 }
 
 
-int DetermineAirbaseLevel(int total_factories, int total_infrastructure)
+using TotalFactoriesType = NamedType<int, struct TotalFactoriesParameter>;
+using TotalInfrastructureType = NamedType<int, struct TotalInfrastructureParameter>;
+int DetermineAirbaseLevel(TotalFactoriesType total_factories, TotalInfrastructureType total_infrastructure)
 {
    constexpr int kNumFactoriesPerAirbase = 4;
    constexpr int kAirbasesForInfrastructureLevel = 3;
 
-   int airbase_level = total_factories / kNumFactoriesPerAirbase;
-   if (total_infrastructure >= kAirbasesForInfrastructureLevel)
+   int airbase_level = total_factories.Get() / kNumFactoriesPerAirbase;
+   if (total_infrastructure.Get() >= kAirbasesForInfrastructureLevel)
    {
       ++airbase_level;
    }
@@ -670,14 +675,14 @@ std::optional<int> GetBestHoi4Province(const mappers::Hoi4ToVic3ProvinceMapping:
 
 std::optional<int> GetVictoryPointValue(const std::string& special_province_type)
 {
-   static const std::map<std::string, int> vp_values{
+   static const std::map<std::string, int> kVpValues{
        {"city", 5},
        {"port", 4},
        {"farm", 3},
        {"mine", 2},
        {"wood", 1},
    };
-   if (const auto& mapping = vp_values.find(special_province_type); mapping != vp_values.end())
+   if (const auto& mapping = kVpValues.find(special_province_type); mapping != kVpValues.end())
    {
       return mapping->second;
    }
@@ -778,6 +783,32 @@ std::map<int, int> CreateVictoryPoints(const std::set<int>& hoi4_provinces,
 }
 
 
+std::optional<std::string> DetermineContinent(const std::set<int>& province_set,
+    const maps::ProvinceDefinitions& province_definitions)
+{
+   std::map<std::string, int> continent_counts;
+   for (int province: province_set)
+   {
+      const std::optional<std::string> possible_continent = province_definitions.GetContinent(std::to_string(province));
+      if (possible_continent.has_value())
+      {
+         continent_counts[*possible_continent]++;
+      }
+   }
+   if (continent_counts.empty())
+   {
+      Log(LogLevel::Warning) << fmt::format("Province set {} had no continents.", fmt::join(province_set, ", "));
+      return std::nullopt;
+   }
+
+   const auto element =
+       std::ranges::max_element(continent_counts, [](std::pair<std::string, int> a, std::pair<std::string, int> b) {
+          return a.second < b.second;
+       });
+   return element->first;
+}
+
+
 void LogIndustryStats(const std::vector<hoi4::State>& hoi4_states,
     const std::map<int, hoi4::DefaultState>& default_states,
     const hoi4::StateCategories& state_categories)
@@ -794,14 +825,14 @@ void LogIndustryStats(const std::vector<hoi4::State>& hoi4_states,
    {
       if (hoi4_state.GetOwner())
       {
-         const auto& tag = hoi4_state.GetOwner().value();
+         const std::string& tag = hoi4_state.GetOwner().value_or("");
          if (!accumulator.contains(tag))
          {
-            accumulator[tag] = {0, 0, 0};
+            accumulator[tag] = {.military = 0, .civilian = 0, .docks = 0};
          }
-         accumulator[tag].military += hoi4_state.GetMilitaryFactories();
-         accumulator[tag].civilian += hoi4_state.GetCivilianFactories();
-         accumulator[tag].docks += hoi4_state.GetDockyards();
+         accumulator[tag].military += static_cast<float>(hoi4_state.GetMilitaryFactories());
+         accumulator[tag].civilian += static_cast<float>(hoi4_state.GetCivilianFactories());
+         accumulator[tag].docks += static_cast<float>(hoi4_state.GetDockyards());
       }
       civilian_factories += hoi4_state.GetCivilianFactories();
       military_factories += hoi4_state.GetMilitaryFactories();
@@ -877,7 +908,7 @@ void LogIndustryStats(const std::vector<hoi4::State>& hoi4_states,
    Log(LogLevel::Info) << "\t\tTop industrial powers:";
    auto key_view = std::views::keys(accumulator);
    std::vector<std::string> tags(key_view.begin(), key_view.end());
-   std::sort(tags.begin(), tags.end(), [&accumulator](const std::string& one, const std::string& two) {
+   std::ranges::sort(tags, [&accumulator](const std::string& one, const std::string& two) {
       return accumulator[one].civilian > accumulator[two].civilian;
    });
    Log(LogLevel::Info) << "\t\t\tTag\tCiv\tMil\tDoc";
@@ -895,19 +926,19 @@ void LogIndustryStats(const std::vector<hoi4::State>& hoi4_states,
 void LogManpowerStats(const std::vector<hoi4::State>& hoi4_states,
     const std::map<int, hoi4::DefaultState>& default_states)
 {
-   int64_t manpower = std::accumulate(hoi4_states.begin(),
+   const auto manpower = static_cast<double>(std::accumulate(hoi4_states.begin(),
        hoi4_states.end(),
        static_cast<int64_t>(0),
        [](int64_t total, const hoi4::State& state) {
           return static_cast<uint64_t>(total + state.GetManpower());
-       });
+       }));
 
-   int64_t default_manpower = std::accumulate(default_states.begin(),
+   const auto default_manpower = static_cast<double>(std::accumulate(default_states.begin(),
        default_states.end(),
        static_cast<int64_t>(0),
        [](int64_t total, const std::pair<int, hoi4::DefaultState>& state) {
           return total + state.second.GetManpower();
-       });
+       }));
 
    OutputStats("Manpower", manpower, default_manpower);
 }
@@ -922,12 +953,12 @@ void LogInfrastructure(mappers::InfrastructureMapper infrastructure_mapper)
 
 void LogNavalBases(const std::vector<hoi4::State>& hoi4_states)
 {
-   int64_t naval_bases = std::accumulate(hoi4_states.begin(),
+   const auto naval_bases = static_cast<double>(std::accumulate(hoi4_states.begin(),
        hoi4_states.end(),
        static_cast<int64_t>(0),
        [](int64_t total, const hoi4::State& state) {
           return static_cast<uint64_t>(total + state.GetNavalBaseLevel().value_or(0));
-       });
+       }));
    OutputStats("Naval base", naval_bases, 1347);
 }
 
@@ -1014,9 +1045,10 @@ hoi4::States CreateStates(const vic3::World& source_world,
       const int64_t total_manpower = vic3_state_itr->second.GetPopulation();
       const float total_factories =
           static_cast<float>(source_world.GetBuildings().GetTotalGoodSalesValueInState(vic3_state_id)) / 175'000.0F;
-      const int total_coastal_provinces = std::ranges::count_if(hoi4_provinces, [&world_framework](int province_id) {
-         return world_framework.coastal_provinces.contains(province_id);
-      });
+      const int total_coastal_provinces =
+          static_cast<int>(std::ranges::count_if(hoi4_provinces, [&world_framework](int province_id) {
+             return world_framework.coastal_provinces.Contains(province_id);
+          }));
       for (const auto& province_set: final_connected_province_sets)
       {
          RecordStateNamesMapping(province_set,
@@ -1052,14 +1084,15 @@ hoi4::States CreateStates(const vic3::World& source_world,
          int infrastructure = infrastructure_mapper.Map(vic3_state_itr->second.GetInfrastructure());
 
          const int air_base_level =
-             DetermineAirbaseLevel(civilian_factories + military_factories + dockyards, infrastructure);
+             DetermineAirbaseLevel(TotalFactoriesType{civilian_factories + military_factories + dockyards},
+                 TotalInfrastructureType{infrastructure});
 
 
          hoi4::Resources resources = {};
          if (config.dynamic_resources)
          {
-            float fraction = province_set.size();
-            fraction /= total_non_wasteland_provinces;
+            auto fraction = static_cast<float>(province_set.size());
+            fraction /= static_cast<float>(total_non_wasteland_provinces);
             resources = CalculateResources(world_mapper.resource_mapper,
                 resource_totals,
                 source_world.GetBuildings().GetBuildingsInState(vic3_state_id),
@@ -1071,7 +1104,7 @@ hoi4::States CreateStates(const vic3::World& source_world,
          }
 
          const std::string category = world_framework.state_categories.GetBestCategory(
-             std::min(civilian_factories + military_factories + dockyards + 2, static_cast<int>(MAX_FACTORY_SLOTS)));
+             std::min(civilian_factories + military_factories + dockyards + 2, static_cast<int>(kMaxFactorySlots)));
 
 
          const int manpower = static_cast<int>(
@@ -1086,9 +1119,9 @@ hoi4::States CreateStates(const vic3::World& source_world,
              config.debug);
 
          std::set<std::string> cores;
-         if (vic3_state_itr->second.IsIncorporated())
+         if (vic3_state_itr->second.IsIncorporated() && state_owner.has_value())
          {
-            cores.insert(*state_owner);
+            cores.insert(state_owner.value());
          }
 
          for (const int province: province_set)
@@ -1101,12 +1134,17 @@ hoi4::States CreateStates(const vic3::World& source_world,
          {
             hoi4_state_ids_to_owner[state_id] = state_owner.value();
          }
+
+         const std::optional<std::string> continent =
+             DetermineContinent(province_set, world_framework.province_definitions);
          hoi4_states.emplace_back(state_id,
-             hoi4::StateOptions{.owner = state_owner,
+             hoi4::StateOptions{
+                 .owner = state_owner,
                  .provinces = province_set,
                  .manpower = manpower,
                  .resources = resources,
                  .category = category,
+                 .continent = continent,
                  .victory_points = victory_points,
                  .civilian_factories = civilian_factories,
                  .military_factories = military_factories,
@@ -1115,8 +1153,10 @@ hoi4::States CreateStates(const vic3::World& source_world,
                  .naval_base_level = naval_base_level,
                  .air_base_level = air_base_level,
                  .cores = cores,
+                 .homelands = vic3_state_itr->second.GetHomelands(),
                  .vic3_infrastructure = vic3_state_itr->second.GetInfrastructure(),
-                 .infrastructure = infrastructure});
+                 .infrastructure = infrastructure,
+             });
       }
       for (const auto& province_set: final_wasteland_connected_province_sets)
       {
@@ -1135,10 +1175,12 @@ hoi4::States CreateStates(const vic3::World& source_world,
          }
          vic3_state_ids_to_hoi4_state_ids.emplace(vic3_state_id, static_cast<int>(hoi4_states.size() + 1U));
          hoi4_states.emplace_back(static_cast<int>(hoi4_states.size() + 1U),
-             hoi4::StateOptions{.owner = state_owner,
+             hoi4::StateOptions{
+                 .owner = state_owner,
                  .provinces = province_set,
                  .manpower = manpower,
-                 .category = "wasteland"});
+                 .category = "wasteland",
+             });
       }
    }
 

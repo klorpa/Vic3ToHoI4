@@ -1,40 +1,176 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.25)
+set(VERBOSE true)
 
 project(Vic3ToHoi4)
+if (RUN_CLANG_TIDY)
+	set(BUILD_TYPE "Clang-tidy")
+else (RUN_CLANG_TIDY)
+	set(BUILD_TYPE ${CMAKE_BUILD_TYPE})
+endif (RUN_CLANG_TIDY)
+
 set(FRONTER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/Fronter/Fronter/Source)
 set(FRONTER_COMMONS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/Fronter/commonItems)
-set(FRONTER_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/Release-Linux)
-set(CONVERTER_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/Release-Linux/Vic3ToHoi4)
-set(TEST_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/test/Release-Linux)
+set(FRONTER_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${BUILD_TYPE}-${PLATFORM})
+set(CONVERTER_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${BUILD_TYPE}-${PLATFORM}/Vic3ToHoi4)
+set(TEST_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/test/${BUILD_TYPE}-${PLATFORM})
+
 set(CMAKE_CXX_STANDARD 23)
 set (UNICODE_DEFAULT OFF)
-#if (DEFINED ENV{COVERAGE})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-	set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
-#else (DEFINED ENV{COVERAGE})
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall")
-#endif (DEFINED ENV{COVERAGE})
 
-add_compile_options(-D_FILE_OFFSET_BITS=64 -DWXUSINGDLL -D__WXGTK__ -pthread)
+if (PLATFORM STREQUAL "Windows")
+	ADD_DEFINITIONS(-DUNICODE -D_UNICODE -DWINDOWS)
+elseif (PLATFORM STREQUAL "Linux")
+	if (COVERAGE STREQUAL true)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+		set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
+	else (COVERAGE STREQUAL true)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall")
+	endif (COVERAGE STREQUAL true)
+endif (PLATFORM STREQUAL "Windows")
 
-find_package(CURL REQUIRED)
 
-include_directories(.)
-include_directories("/usr/include/wx-3.2-unofficial")
-include_directories("/usr/lib/x86_64-linux-gnu/wx/include/gtk3-unicode-3.2-unofficial")
+#### Gtest ####
+set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googletest/src/gtest_main.cc")
+set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googletest/src/gtest-all.cc")
+set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googlemock/src/gmock-all.cc")
+
+add_library(
+	GtestLib
+	${GTEST_SOURCES}
+)
+
+
+#### Fronter ####
+
+if (PLATFORM STREQUAL "Windows")
+	link_directories("./external/Fronter/external/wxWidgets/3.2.1/lib/vc14x_x64_dll")
+	link_directories("./external/Fronter/external/curl/lib")
+	find_library(LIBCURL_LIB libcurl HINT "./external/Fronter/external/curl/lib" NO_DEFAULT_PATH)
+	find_library(LIBCURL_DLL_LIB libcurl.dll HINT "./external/Fronter/external/curl/lib" NO_DEFAULT_PATH)
+endif (PLATFORM STREQUAL "Windows")
+
 include_directories("./external/Fronter/external/SQLiteCpp/include")
 include_directories("./external/Fronter/external/SQLiteCpp/sqlite3")
-include_directories("./external/fmt/include")
-include_directories("./external/commonItems")
-include_directories("./external/commonItems/external/json/single_include")
-include_directories("./external/commonItems/external/googletest/googletest")
-include_directories("./external/commonItems/external/googletest/googletest/include")
-include_directories("./external/commonItems/external/googletest/googlemock")
-include_directories("./external/commonItems/external/googletest/googlemock/include")
+include_directories("./external/Fronter/external/commonItems/external/json/single_include")
+if (PLATFORM STREQUAL "Windows")
+	include_directories(${PROJECT_SOURCE_DIR}/external/Fronter/external/curl/include)
+	include_directories(${PROJECT_SOURCE_DIR}/external/Fronter/external/wxWidgets/3.2.1/include)
+	include_directories(${PROJECT_SOURCE_DIR}/external/Fronter/external/wxWidgets/3.2.1/include/msvc)
+	ADD_DEFINITIONS(-D_WINDOWS)
+	ADD_DEFINITIONS(-D__WXMSW__)
+	ADD_DEFINITIONS(-DwxMSVC_VERSION_AUTO)
+	ADD_DEFINITIONS(-DWXUSINGDLL)
+	ADD_DEFINITIONS(-DwxMSVC_VERSION_ABI_COMPAT)
+elseif (PLATFORM STREQUAL "Linux")
+	find_package(CURL REQUIRED)
+	find_package(wxWidgets REQUIRED COMPONENTS net core base)
+	include_directories("/usr/include/wx-3.2-unofficial")
+	include_directories("/usr/lib/x86_64-linux-gnu/wx/include/gtk3-unicode-3.2-unofficial")
+	include(${wxWidgets_USE_FILE})
+	add_compile_options(-D_FILE_OFFSET_BITS=64 -DWXUSINGDLL -D__WXGTK__ -pthread)
+endif (PLATFORM STREQUAL "Windows")
 
-link_directories(external/rakaly)
+file(GLOB F_MAIN_SOURCES "${FRONTER_SOURCE_DIR}/*.cpp")
+file(GLOB F_CONFIGURATION_SOURCES "${FRONTER_SOURCE_DIR}/Configuration/*.cpp")
+file(GLOB F_CONFIGURATION_OPTIONS_SOURCES "${FRONTER_SOURCE_DIR}/Configuration/Options/*.cpp")
+file(GLOB F_FRAMES_SOURCES "${FRONTER_SOURCE_DIR}/Frames/*.cpp")
+file(GLOB F_FRAMES_TABS_SOURCES "${FRONTER_SOURCE_DIR}/Frames/Tabs/*.cpp")
+file(GLOB F_UPDATECHECKER_SOURCES "${FRONTER_SOURCE_DIR}/UpdateChecker/*.cpp")
+file(GLOB F_UTILS_SOURCES "${FRONTER_SOURCE_DIR}/Utils/*.cpp")
+file(GLOB F_UTILS_LOCALIZATION_SOURCES "${FRONTER_SOURCE_DIR}/Utils/Localization/*.cpp")
+file(GLOB F_CONVERTERLAUNCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ConverterLauncher/*.cpp")
+if (PLATFORM STREQUAL "Windows")
+	list(REMOVE_ITEM F_CONVERTERLAUNCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ConverterLauncher/LinuxConverterLauncher.cpp")
+elseif (PLATFORM STREQUAL "Linux")
+	list(REMOVE_ITEM F_CONVERTERLAUNCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ConverterLauncher/WinConverterLauncher.cpp")
+endif (PLATFORM STREQUAL "Windows")
+file(GLOB F_LOGWATCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/LogWatcher/*.cpp")
+file(GLOB F_MODCOPIER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ModCopier/*.cpp")
+file(GLOB F_SQLITE_SOURCES "${FRONTER_SOURCE_DIR}/../../external/SQLiteCpp/src/*.cpp")
+file(GLOB F_SQLITE3_SOURCES "${FRONTER_SOURCE_DIR}/../../external/SQLiteCpp/sqlite3/*.c")
+
+if (PLATFORM STREQUAL "Windows")
+	add_executable(ConverterFrontend WIN32
+		${F_MAIN_SOURCES}
+		${F_CONFIGURATION_SOURCES}
+		${F_CONFIGURATION_OPTIONS_SOURCES}
+		${F_FRAMES_SOURCES}
+		${F_FRAMES_TABS_SOURCES}
+		${F_UTILS_SOURCES}
+		${F_UTILS_LOCALIZATION_SOURCES}
+		${F_CONVERTERLAUNCHER_SOURCES}
+		${F_LOGWATCHER_SOURCES}
+		${F_MODCOPIER_SOURCES}
+		${F_UPDATECHECKER_SOURCES}
+		${F_SQLITE_SOURCES}
+		${F_SQLITE3_SOURCES}
+	 )
+	 set_target_properties(ConverterFrontend
+		PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY ${FRONTER_OUTPUT_DIRECTORY}
+	 )
+elseif (PLATFORM STREQUAL "Linux")
+	add_executable(ConverterFrontend
+		${F_MAIN_SOURCES}
+		${F_CONFIGURATION_SOURCES}
+		${F_CONFIGURATION_OPTIONS_SOURCES}
+		${F_FRAMES_SOURCES}
+		${F_FRAMES_TABS_SOURCES}
+		${F_UTILS_SOURCES}
+		${F_UTILS_LOCALIZATION_SOURCES}
+		${F_CONVERTERLAUNCHER_SOURCES}
+		${F_LOGWATCHER_SOURCES}
+		${F_MODCOPIER_SOURCES}
+		${F_UPDATECHECKER_SOURCES}
+		${F_SQLITE_SOURCES}
+		${F_SQLITE3_SOURCES}
+	)
+	set_target_properties(ConverterFrontend
+		PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY ${FRONTER_OUTPUT_DIRECTORY}
+	)
+endif (PLATFORM STREQUAL "Windows")
+
+if (PLATFORM STREQUAL "Windows")
+	target_link_libraries(ConverterFrontend LINK_PUBLIC ${LIBCURL_LIB} ${LIBCURL_DLL_LIB} commonLib) 
+elseif (PLATFORM STREQUAL "Linux")
+	target_link_libraries(ConverterFrontend LINK_PUBLIC ${wxWidgets_LIBRARIES} ${CURL_LIBRARIES} commonLib)
+endif (PLATFORM STREQUAL "Windows")
+
+if (PLATFORM STREQUAL "Windows" AND NOT RUN_CLANG_TIDY)
+	configure_file("external/Fronter/Fronter/Resources/converter.ico" "${FRONTER_OUTPUT_DIRECTORY}/converter.ico" COPYONLY)
+	configure_file("external/Fronter/Fronter/Resources/GeneralFAQ-READ.ME.FIRST.txt" "${FRONTER_OUTPUT_DIRECTORY}/GeneralFAQ-READ.ME.FIRST.txt" COPYONLY)
+	configure_file("external/Fronter/Fronter/Resources/libcrypto-1_1-x64.dll" "${FRONTER_OUTPUT_DIRECTORY}/libcrypto-1_1-x64.dll" COPYONLY)
+	configure_file("external/Fronter/Fronter/Resources/libssl-1_1-x64.dll" "${FRONTER_OUTPUT_DIRECTORY}/libssl-1_1-x64.dll" COPYONLY)
+	configure_file("external/Fronter/external/curl/bin/libcurl-x64.dll" "${FRONTER_OUTPUT_DIRECTORY}/libcurl-x64.dll" COPYONLY)
+	if (CMAKE_BUILD_TYPE STREQUAL "Release")
+		configure_file("external/Fronter/external/wxWidgets/3.2.1/lib/vc14x_x64_dll/wxbase32u_vc14x_x64.dll" "${FRONTER_OUTPUT_DIRECTORY}" COPYONLY)
+		configure_file("external/Fronter/external/wxWidgets/3.2.1/lib/vc14x_x64_dll/wxmsw32u_core_vc14x_x64.dll" "${FRONTER_OUTPUT_DIRECTORY}" COPYONLY)
+	elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+		configure_file("external/Fronter/external/wxWidgets/3.2.1/lib/vc14x_x64_dll/wxbase32ud_vc14x_x64.dll" "${FRONTER_OUTPUT_DIRECTORY}" COPYONLY)
+		configure_file("external/Fronter/external/wxWidgets/3.2.1/lib/vc14x_x64_dll/wxmsw32ud_core_vc14x_x64.dll" "${FRONTER_OUTPUT_DIRECTORY}" COPYONLY)
+	endif (CMAKE_BUILD_TYPE STREQUAL "Release")
+	file(GLOB FRONTER_CONFIG "data/fronter/*")
+	file(COPY ${FRONTER_CONFIG} DESTINATION "${FRONTER_OUTPUT_DIRECTORY}/Configuration/")
+	file(GLOB LOCALIZATIONS "external/Fronter/Fronter/Resources/*.yml")
+	file(COPY ${LOCALIZATIONS} DESTINATION "${FRONTER_OUTPUT_DIRECTORY}/Configuration/")
+elseif (PLATFORM STREQUAL "Linux" AND NOT RUN_CLANG_TIDY)
+	add_custom_command(TARGET ConverterFrontend
+		COMMAND mkdir -p "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
+		cp -r "data/fronter/*" "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
+		cp -r "external/Fronter/Fronter/Resources/*yml" "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
+		cp external/Fronter/Fronter/Resources/converter.ico ${FRONTER_OUTPUT_DIRECTORY} &&
+		cp external/Fronter/Fronter/Resources/GeneralFAQ-READ.ME.FIRST.txt ${FRONTER_OUTPUT_DIRECTORY}
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	)
+endif (PLATFORM STREQUAL "Windows" AND NOT RUN_CLANG_TIDY)
+
 
 #### Converter ####
+
+include_directories(.)
+include_directories("./external/fmt/include")
+include_directories("./external/commonItems")
 
 set(PCH_SOURCES ${PCH_SOURCES} "${PROJECT_SOURCE_DIR}/external/bitmap/bitmap_image.hpp")
 set(PCH_SOURCES ${PCH_SOURCES} "${PROJECT_SOURCE_DIR}/external/commonItems/BulkParser.h")
@@ -67,26 +203,56 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/characters/hoi4_chara
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/countries/hoi4_countries_converter.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/countries/hoi4_country.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/countries/hoi4_country_converter.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/decisions/decision.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/decisions/decisions_category.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/decisions/decisions_category_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/decisions/decision_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/diplomacy/hoi4_war_converter.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/events/event.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/events/event_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/events/event_option.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/events/event_option_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/focus_trees/focus.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/focus_trees/focus_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/focus_trees/focus_tree_assembler.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/localizations/localizations_converter.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/buildings_creator.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/coastal_provinces_creator.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/hoi4_building.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/hoi4_province_definition_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/railways_converter.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/resources_map_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/strategic_region_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/strategic_regions.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/map/strategic_regions_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/battalion.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/convoy_distributor.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/convoy_distributor_builder.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/division_templates_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/equipment_variant.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/equipment_variants_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/task_force.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/task_force_template.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/military/task_force_templates_builder.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/repeat_focus_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/repeat_focus.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/role.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/role_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/roles_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/stories_creator.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/and_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/any_other_country_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/any_owned_state_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/has_homeland_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/is_capital_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/is_on_continent_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/nand_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/nor_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/not_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/or_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/tag_trigger.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/trigger_base.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/roles/triggers/trigger_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/states/default_states_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/states/hoi4_state.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/hoi4_world/states/hoi4_states_converter.cpp")
@@ -103,6 +269,7 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/country/country_mapper.c
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/country/country_mapper_creator.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/culture/culture_graphics_mapper.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/culture/culture_graphics_mapper_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/culture/culture_graphics_mapping.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/flags/flag_mapper.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/flags/flag_mapper_builder.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/mappers/ideology/ideology_mapper.cpp")
@@ -126,8 +293,16 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/maps/utility.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/characters/out_character.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/countries/out_countries.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/countries/out_country.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/decisions/out_decision.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/decisions/out_decisions.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/decisions/out_decisions_categories.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/decisions/out_decisions_category.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/diplomacy/out_war.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/events/out_event.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/events/out_events.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/events/out_event_option.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/focus_trees/out_focus.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/focus_trees/out_focus_tree.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/flags/out_flags.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/ideas/out_ideas.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/localizations/out_localizations.cpp")
@@ -135,14 +310,12 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_building.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_buildings.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_railway.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_railways.cpp")
-set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_rocket_sites.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_strategic_region.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_strategic_regions.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/map/out_supply_nodes.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/military/out_equipment_variant.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/names/out_name_list.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/names/out_names.cpp")
-set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/national_focus/out_focus_tree.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/out_mod.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/portraits/out_portrait_paths.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/out_hoi4/portraits/out_portraits.cpp")
@@ -154,6 +327,7 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/support/converter_utils.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/support/progress_manager.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_to_hoi4_converter.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/buildings/building_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/buildings/building.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/buildings/buildings.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/buildings/buildings_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/characters/vic3_character_importer.cpp")
@@ -173,9 +347,12 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/ideologies/ideologies
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/ideologies/ideologies_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/ideologies/ideology_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/institutions/institutions_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/interest_groups/interest_group.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/interest_groups/interest_group_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/interest_groups/interest_groups_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/laws/laws_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/military/combat_unit_importer.cpp")
+set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/military/combat_units_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/military/military_formations_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/military/military_formation_importer.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/pacts/pact_importer.cpp")
@@ -191,38 +368,29 @@ set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/wars/war_importer.cpp
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/world/vic3_world_builder.cpp")
 set(CONVERTER_SOURCES ${CONVERTER_SOURCES} "src/vic3_world/world/vic3_world_importer.cpp")
 
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/BulkParser.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Color.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/CommonFunctions.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ConvenientParser.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ConverterVersion.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Date.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/GameVersion.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/LinuxUtils.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Localization/LocalizationBlock.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Localization/LocalizationDatabase.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Log.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ModLoader/ModFilesystem.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ModLoader/ModLoader.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ModLoader/ModParser.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/OSCommonLayer.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/Parser.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/ParserHelpers.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/StringUtils.cpp")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/external/zip/src/zip.c")
-set(COMMON_SOURCES ${COMMON_SOURCES} "external/commonItems/iconvlite.cpp")
-
 set(FORMAT_SOURCES ${FORMAT_SOURCES} "external/fmt/src/format.cc")
 set(FORMAT_SOURCES ${FORMAT_SOURCES} "external/fmt/src/os.cc")
+add_library(fmtLib ${FORMAT_SOURCES})
 
-add_library(CommonItems ${COMMON_SOURCES})
+link_directories("./external/rakaly")
 
+add_subdirectory(external/commonItems EXCLUDE_FROM_ALL)
+
+if (RUN_CLANG_TIDY)
+	set(CMAKE_CXX_CLANG_TIDY clang-tidy --header-filter=.*src.* --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy --extra-arg=/EHsc)
+endif(RUN_CLANG_TIDY)
 add_library(Vic3ToHoi4lib
 	${CONVERTER_SOURCES}
-	${FORMAT_SOURCES}
 )
 target_precompile_headers(Vic3ToHoi4lib PUBLIC ${PCH_SOURCES})
-target_link_libraries(Vic3ToHoi4lib LINK_PUBLIC CommonItems rakaly)
+if (PLATFORM STREQUAL "Windows")
+	target_compile_options(Vic3ToHoi4lib PRIVATE /permissive /W4 /w14242 /w14254 /w14263 /w14265 /w14287 /we4289 /w14296 
+        /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928 
+        /external:anglebrackets /external:W0 /WX)
+	target_link_libraries(Vic3ToHoi4lib LINK_PUBLIC commonLib fmtLib rakaly.dll.lib)
+elseif (PLATFORM STREQUAL "Linux")
+	target_link_libraries(Vic3ToHoi4lib LINK_PUBLIC commonLib fmtLib rakaly)
+endif (PLATFORM  STREQUAL "Windows")
 
 add_executable(
 	Vic3ToHoi4
@@ -234,64 +402,33 @@ set_target_properties( Vic3ToHoi4
 )
 target_precompile_headers(Vic3ToHoi4 REUSE_FROM Vic3ToHoi4lib)
 target_link_libraries(Vic3ToHoi4 LINK_PUBLIC Vic3ToHoi4lib)
+if (PLATFORM STREQUAL "Windows")
+	target_compile_options(Vic3ToHoi4 PRIVATE /permissive /W4 /w14242 /w14254 /w14263 /w14265 /w14287 /we4289 /w14296 
+        /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928 
+        /external:anglebrackets /external:W0 /WX)
+	target_link_libraries(Vic3ToHoi4 LINK_PUBLIC commonLib rakaly.dll.lib)
+elseif (PLATFORM STREQUAL "Linux")
+	target_link_libraries(Vic3ToHoi4 LINK_PUBLIC commonLib rakaly)
+endif (PLATFORM  STREQUAL "Windows")
 
-configure_file("data/version.txt" "${FRONTER_OUTPUT_DIRECTORY}/version.txt" COPYONLY)
-configure_file("data/readme.txt" "${FRONTER_OUTPUT_DIRECTORY}/readme.txt" COPYONLY)
-file(COPY "data/blank_mod" DESTINATION "${CONVERTER_OUTPUT_DIRECTORY}")
-file(COPY "data/configurables" DESTINATION "${CONVERTER_OUTPUT_DIRECTORY}")
-add_custom_command(TARGET Vic3ToHoi4 POST_BUILD WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} COMMAND git rev-parse HEAD > ${CONVERTER_OUTPUT_DIRECTORY}/../commit_id.txt)
+if (NOT RUN_CLANG_TIDY)
+	configure_file("data/version.txt" "${FRONTER_OUTPUT_DIRECTORY}/version.txt" COPYONLY)
+	configure_file("data/readme.txt" "${FRONTER_OUTPUT_DIRECTORY}/readme.txt" COPYONLY)
+	file(COPY "data/blank_mod" DESTINATION "${CONVERTER_OUTPUT_DIRECTORY}")
+	file(COPY "data/configurables" DESTINATION "${CONVERTER_OUTPUT_DIRECTORY}")
+	if (PLATFORM STREQUAL "Windows")
+		configure_file("external/rakaly/rakaly.dll" "${FRONTER_OUTPUT_DIRECTORY}/Vic3toHoi4/rakaly.dll" COPYONLY)
+	endif (PLATFORM STREQUAL "Windows")
+	add_custom_command(TARGET Vic3ToHoi4 POST_BUILD WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} COMMAND git rev-parse HEAD > ${CONVERTER_OUTPUT_DIRECTORY}/../commit_id.txt)
+endif (NOT RUN_CLANG_TIDY)
 
-#### Fronter ####
-
-file(GLOB F_MAIN_SOURCES "${FRONTER_SOURCE_DIR}/*.cpp")
-file(GLOB F_CONFIGURATION_SOURCES "${FRONTER_SOURCE_DIR}/Configuration/*.cpp")
-file(GLOB F_CONFIGURATION_OPTIONS_SOURCES "${FRONTER_SOURCE_DIR}/Configuration/Options/*.cpp")
-file(GLOB F_FRAMES_SOURCES "${FRONTER_SOURCE_DIR}/Frames/*.cpp")
-file(GLOB F_FRAMES_TABS_SOURCES "${FRONTER_SOURCE_DIR}/Frames/Tabs/*.cpp")
-file(GLOB F_UTILS_SOURCES "${FRONTER_SOURCE_DIR}/Utils/*.cpp")
-file(GLOB F_UTILS_LOCALIZATION_SOURCES "${FRONTER_SOURCE_DIR}/Utils/Localization/*.cpp")
-file(GLOB F_CONVERTERLAUNCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ConverterLauncher/*.cpp")
-list(REMOVE_ITEM F_CONVERTERLAUNCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ConverterLauncher/WinConverterLauncher.cpp")
-file(GLOB F_LOGWATCHER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/LogWatcher/*.cpp")
-file(GLOB F_MODCOPIER_SOURCES "${FRONTER_SOURCE_DIR}/WorkerThreads/ModCopier/*.cpp")
-file(GLOB F_UPDATECHECKER_SOURCES "${FRONTER_SOURCE_DIR}/UpdateChecker/*.cpp")
-file(GLOB F_SQLITE_SOURCES "${FRONTER_SOURCE_DIR}/../../external/SQLiteCpp/src/*.cpp")
-file(GLOB F_SQLITE3_SOURCES "${FRONTER_SOURCE_DIR}/../../external/SQLiteCpp/sqlite3/*.c")
-
-add_executable(ConverterFrontend
-	${F_MAIN_SOURCES}
-	${F_CONFIGURATION_SOURCES}
-	${F_CONFIGURATION_OPTIONS_SOURCES}
-	${F_FRAMES_SOURCES}
-	${F_FRAMES_TABS_SOURCES}
-	${F_UTILS_SOURCES}
-	${F_UTILS_LOCALIZATION_SOURCES}
-	${F_CONVERTERLAUNCHER_SOURCES}
-	${F_LOGWATCHER_SOURCES}
-	${F_MODCOPIER_SOURCES}
-	${F_UPDATECHECKER_SOURCES}
-	${F_SQLITE_SOURCES}
-	${F_SQLITE3_SOURCES}
-)
-
-find_package(wxWidgets REQUIRED COMPONENTS net core base)
-include(${wxWidgets_USE_FILE})
-set_target_properties(ConverterFrontend
-    PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${FRONTER_OUTPUT_DIRECTORY}
-)
-target_link_libraries(ConverterFrontend LINK_PUBLIC ${wxWidgets_LIBRARIES} ${CURL_LIBRARIES} CommonItems)
-
-add_custom_command(TARGET ConverterFrontend
-	COMMAND mkdir -p "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
-	cp -r "data/fronter/*" "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
-	cp -r "external/Fronter/Fronter/Resources/*yml" "${FRONTER_OUTPUT_DIRECTORY}/Configuration/" &&
-	cp external/Fronter/Fronter/Resources/converter.ico ${FRONTER_OUTPUT_DIRECTORY} &&
-	cp external/Fronter/Fronter/Resources/GeneralFAQ-READ.ME.FIRST.txt ${FRONTER_OUTPUT_DIRECTORY}
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
 
 #### Tests ####
+
+include_directories("./external/commonItems/external/googletest/googletest")
+include_directories("./external/commonItems/external/googletest/googletest/include")
+include_directories("./external/commonItems/external/googletest/googlemock")
+include_directories("./external/commonItems/external/googletest/googlemock/include")
 
 set(TEST_SOURCES ${TEST_SOURCES} "src/configuration/configuration_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/characters/hoi4_characters_converter_tests.cpp")
@@ -300,7 +437,15 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/characters/hoi4_character_tests
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/countries/hoi4_countries_converter_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/countries/hoi4_country_converter_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/countries/hoi4_country_converter_tests_tech.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/decisions/decisions_category_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/decisions/decision_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/decisions/decision_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/diplomacy/hoi4_war_converter_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/events/event_option_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/events/event_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/focus_trees/focus_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/focus_trees/focus_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/focus_trees/focus_tree_assembler_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/localizations/localizations_converter_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/map/buildings_creator_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/map/coastal_provinces_creator_tests.cpp")
@@ -319,9 +464,23 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/military/division_templates_imp
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/military/equipment_variants_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/military/task_force_template_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/military/task_force_templates_builder_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/repeat_focus_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/role_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/roles_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/stories_creator_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/always_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/and_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/any_other_country_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/any_owned_state_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/has_homeland_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/is_capital_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/is_on_continent_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/nand_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/nor_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/not_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/or_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/tag_trigger_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/roles/triggers/trigger_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/states/default_states_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/states/hoi4_states_converter_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/hoi4_world/states/hoi4_states_converter_tests_state_contents.cpp")
@@ -361,15 +520,22 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/maps/utility_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/characters/out_character_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/countries/out_countries_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/countries/out_country_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/decisions/out_decision_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/decisions/out_decisions_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/decisions/out_decisions_categories_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/decisions/out_decisions_category_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/diplomacy/out_war_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/events/out_event_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/events/out_events_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/events/out_event_option_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/flags/out_flags_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/focus_trees/out_focus_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/focus_trees/out_focus_tree_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/localizations/out_localizations_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_buildings_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_building_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_railways_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_railway_tests.cpp")
-set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_rocket_sites_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_strategic_regions_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_strategic_region_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/map/out_supply_nodes_tests.cpp")
@@ -377,7 +543,6 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/military/out_equipment_variant_te
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/names/out_names_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/names/out_name_list_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/names/out_names_tests.cpp")
-set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/national_focus/out_focus_tree_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/out_mod_test.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/portraits/out_portraits_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/out_hoi4/portraits/out_portrait_paths_tests.cpp")
@@ -408,6 +573,8 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/institutions/institutions_impor
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/interest_groups/interest_groups_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/interest_groups/interest_group_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/laws/laws_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/military/combat_unit_importer_tests.cpp")
+set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/military/combat_units_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/military/military_formations_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/military/military_formation_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/pacts/pacts_importer_tests.cpp")
@@ -424,94 +591,100 @@ set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/wars/war_importer_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/world/vic3_world_builder_tests.cpp")
 set(TEST_SOURCES ${TEST_SOURCES} "src/vic3_world/world/vic3_world_importer_tests.cpp")
 
-set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googletest/src/gtest_main.cc")
-set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googletest/src/gtest-all.cc")
-set(GTEST_SOURCES ${GTEST_SOURCES} "external/commonItems/external/googletest/googlemock/src/gmock-all.cc")
-
 add_executable(
 	Vic3ToHoi4Tests
 	${TEST_SOURCES}
-	${GTEST_SOURCES}
 )
-set_target_properties( Vic3ToHoi4Tests
+set_target_properties(Vic3ToHoi4Tests
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIRECTORY}
 )
 target_precompile_headers(Vic3ToHoi4Tests REUSE_FROM Vic3ToHoi4lib)
+if (PLATFORM STREQUAL "Windows")
+    target_compile_options(Vic3ToHoi4Tests PRIVATE /permissive /W4 /w14242 /w14254 /w14263 /w14265 /w14287 /we4289 
+        /w14296 /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928 
+        /external:anglebrackets /external:W0 /WX)
+elseif (PLATFORM STREQUAL "Linux")
+endif (PLATFORM STREQUAL "Windows")
 
 file(COPY "data/blank_mod" DESTINATION "${TEST_OUTPUT_DIRECTORY}")
 file(COPY "data/test_files" DESTINATION "${TEST_OUTPUT_DIRECTORY}")
 file(COPY "data/test_files/configurables" DESTINATION "${TEST_OUTPUT_DIRECTORY}")
+if (PLATFORM STREQUAL "Windows")
+	configure_file("external/rakaly/rakaly.dll" "${TEST_OUTPUT_DIRECTORY}/rakaly.dll" COPYONLY)
+endif (PLATFORM STREQUAL "Windows")
 
-target_link_libraries(Vic3ToHoi4Tests LINK_PUBLIC Vic3ToHoi4lib)
+target_link_libraries(Vic3ToHoi4Tests LINK_PUBLIC Vic3ToHoi4lib GtestLib)
+
+enable_testing()
+
+add_test(NAME Vic3ToHoI4Tests COMMAND Vic3ToHoI4Tests WORKING_DIRECTORY ${TEST_OUTPUT_DIRECTORY})
 
 ####  Coverage ####
 
-add_custom_target(gcov
-	COMMAND mkdir -p gcoverage
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-add_custom_command(TARGET gcov
-	COMMAND echo "=================== GCOV ===================="
-	COMMAND echo "-- Source directories:"
-	COMMAND echo "		${CMAKE_SOURCE_DIR}/src/"
-	COMMAND echo "-- Coverage files have been output to ${CMAKE_BINARY_DIR}/gcoverage"
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/gcoverage
-)
+if (COVERAGE STREQUAL true)
+	add_custom_target(gcov
+		COMMAND mkdir -p gcoverage
+	)
+	add_custom_command(TARGET gcov
+		COMMAND echo "=================== GCOV ===================="
+		COMMAND echo "-- Source directories:"
+		COMMAND echo "		${CMAKE_SOURCE_DIR}/src/"
+		COMMAND echo "-- Coverage files have been output to ${CMAKE_BINARY_DIR}/gcoverage"
+	)
 
-add_custom_target(lcov
-	COMMAND mkdir -p lcoverage
-)
-add_custom_command(TARGET lcov
-	COMMAND echo "=================== LCOV ===================="
-	COMMAND echo "-- Passing lcov tool under code coverage"
-	COMMAND lcov --c --d CMakeFiles/Vic3ToHoi4lib.dir/src/ --d CMakeFiles/Vic3ToHoi4Tests.dir/src/ --o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/ext/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/11/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/ext/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/12/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/ext/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/13/bits/*" -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/external/bitmap/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/external/commonItems/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/external/fmt/include/fmt/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/external/rakaly/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/gmock/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/gtest/*' -o lcoverage/coverage.info
-	COMMAND lcov --remove lcoverage/coverage.info '*/gtest/internal/*' -o lcoverage/coverage.info
-	COMMAND echo "-- Generating HTML output files"
-	COMMAND genhtml lcoverage/coverage.info --output-directory lcoverage
-)
-add_dependencies(gcov Vic3ToHoi4Tests)
+	add_custom_target(lcov
+		COMMAND mkdir -p lcoverage
+	)
+	add_custom_command(TARGET lcov
+		COMMAND echo "=================== LCOV ===================="
+		COMMAND echo "-- Passing lcov tool under code coverage"
+		COMMAND lcov --c --d CMakeFiles/Vic3ToHoi4lib.dir/src/ --d CMakeFiles/Vic3ToHoi4Tests.dir/src/ --o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/11/ext/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/11/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/12/ext/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/12/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/c++/13/ext/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/include/x86_64-linux-gnu/c++/13/bits/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/lib/gcc/x86_64-linux-gnu/12/include/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info "/usr/lib/gcc/x86_64-linux-gnu/13/include/*" -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/external/bitmap/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/external/commonItems/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/external/fmt/include/fmt/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/external/rakaly/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/external/stb/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/gmock/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/gtest/*' -o lcoverage/coverage.info
+		COMMAND lcov --remove lcoverage/coverage.info '*/gtest/internal/*' -o lcoverage/coverage.info
+		COMMAND echo "-- Generating HTML output files"
+		COMMAND genhtml lcoverage/coverage.info --output-directory lcoverage
+	)
+	add_dependencies(gcov Vic3ToHoi4Tests)
 
-# Make sure to clean up the coverage folder
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES gcoverage)
+	# Make sure to clean up the coverage folder
+	set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES gcoverage)
 
-# Create the gcov-clean target. This cleans the build as well as generated 
-# .gcda and .gcno files.
-add_custom_target(init
-	COMMAND ${CMAKE_MAKE_PROGRAM} clean
-	COMMAND rm -f ${TEST_OUTPUT_DIRECTORY}/*.gcno
-	COMMAND rm -f ${TEST_OUTPUT_DIRECTORY}/*.gcda
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
-# Testing
-enable_testing()
-
-add_test(Vic3ToHoI4Tests ${CMAKE_CURRENT_BINARY_DIR}/test/Release-Linux/Vic3ToHoI4Tests)
+	# Create the gcov-clean target. This cleans the build as well as generated 
+	# .gcda and .gcno files.
+	add_custom_target(init
+		COMMAND ${CMAKE_MAKE_PROGRAM} clean
+		COMMAND rm -f ${TEST_OUTPUT_DIRECTORY}/*.gcno
+		COMMAND rm -f ${TEST_OUTPUT_DIRECTORY}/*.gcda
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
+endif (COVERAGE STREQUAL true)
 
 
 #### Clang-tidy ####
 
-find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
-set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}")
+#find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
+#set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}")
 # checks to maybe add:
 #  cert-*
 #  cppcoreguidelines-*,
@@ -522,3 +695,4 @@ add_library(run_clang_tidy
 )
 target_link_libraries(run_clang_tidy pthread)
 set_target_properties(run_clang_tidy PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+add_dependencies(run_clang_tidy Vic3ToHoi4 Vic3ToHoi4Tests)

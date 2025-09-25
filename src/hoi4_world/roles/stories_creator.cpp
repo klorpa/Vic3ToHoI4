@@ -1,10 +1,12 @@
 #include "src/hoi4_world/roles/stories_creator.h"
 
+#include <external/fmt/include/fmt/format.h>
+
 #include <ranges>
 #include <set>
 
-#include "external/fmt/include/fmt/format.h"
 #include "src/hoi4_world/roles/roles_importer.h"
+#include "src/hoi4_world/roles/triggers/context.h"
 
 
 
@@ -15,38 +17,22 @@ using Tag = std::string;
 using CombinationName = std::string;
 
 
-bool IsRoleValidForCountry(const hoi4::Role& role, const std::string_view country_tag, const hoi4::Country& country)
+bool IsRoleValidForCountry(const hoi4::Role& role, const hoi4::World& world, const hoi4::Country& country)
 {
-   // scan for 'always=yes' constructs
-   const std::regex always_match_regex(R"([\s\S]*always[\s\S]?=[\s\S]?yes[\s\S]*)");
-   std::smatch always_match;
-   if (std::regex_match(role.GetRequirements(), always_match, always_match_regex))
-   {
-      return true;
-   }
-
-   // scan for 'tag=TAG' constructs
-   const std::regex tag_match_regex(R"([\s\S]*tag[\s\S]?=[\s\S]?(\w{3})[\s\S]*)");
-   std::smatch tag_match;
-   if (std::regex_match(role.GetRequirements(), tag_match, tag_match_regex))
-   {
-      return tag_match[1] == std::string(country_tag);
-   }
-
-   // scan for 'has_culture=culture' constructs
-   const std::regex culture_match_regex(R"([\s\S]*country_has_primary_culture[\s\S]?=[\s\S]?(.+)[\s\S]*)");
-   std::smatch culture_match;
-   if (std::regex_match(role.GetRequirements(), culture_match, culture_match_regex))
-   {
-      return country.GetPrimaryCultures().contains(culture_match[1]);
-   }
-
-   return false;
+   const hoi4::CountryScope country_scope{country};
+   const hoi4::Context context{
+       .root = country_scope,
+       .this_scope = country_scope,
+       .prev = country_scope,
+       .from = country_scope,
+   };
+   return role.GetTrigger().IsValid(context, world);
 }
 
 
 std::optional<std::vector<std::pair<Tag, CombinationName>>> MakeCombinations(
     const std::map<std::string, hoi4::Role>& roles,
+    const hoi4::World& world,
     const std::map<std::string, hoi4::Country>& countries)
 {
    std::vector<std::pair<Tag, CombinationName>> combinations;
@@ -55,7 +41,7 @@ std::optional<std::vector<std::pair<Tag, CombinationName>>> MakeCombinations(
    {
       for (const auto& [country_tag, country]: countries)
       {
-         if (IsRoleValidForCountry(role, country_tag, country))
+         if (IsRoleValidForCountry(role, world, country))
          {
             combinations.emplace_back(country_tag, role_name);
          }
@@ -72,12 +58,12 @@ std::optional<std::vector<std::pair<Tag, CombinationName>>> SortCombinations(
     const std::map<std::string, hoi4::Role>& roles)
 {
    std::ranges::sort(combinations, [roles](const auto& a, const auto& b) {
-      int a_score = 0;
+      float a_score = 0.0F;
       if (const auto role = roles.find(a.second); role != roles.end())
       {
          a_score = role->second.GetScore();
       }
-      int b_score = 0;
+      float b_score = 0.0F;
       if (const auto role = roles.find(b.second); role != roles.end())
       {
          b_score = role->second.GetScore();
@@ -156,18 +142,38 @@ std::optional<std::vector<std::pair<Tag, hoi4::Role>>> ExpandCombinations(
       expanded_combinations.emplace_back(tag, role->second);
    }
 
+   Log(LogLevel::Info) << fmt::format("\tExpanded to {} role combinations.", expanded_combinations.size());
    return expanded_combinations;
+}
+
+
+std::optional<std::map<Tag, std::vector<hoi4::Role>>> GroupCombinations(
+    const std::vector<std::pair<Tag, hoi4::Role>>& combinations)
+{
+   std::map<Tag, std::vector<hoi4::Role>> grouped_combinations;
+   for (const auto& [tag, role]: combinations)
+   {
+      auto [itr, success] = grouped_combinations.emplace(tag, std::vector{role});
+      if (!success)
+      {
+         itr->second.push_back(role);
+      }
+   }
+
+   Log(LogLevel::Info) << fmt::format("\tGrouped into {} countries with roles.", grouped_combinations.size());
+   return grouped_combinations;
 }
 
 }  // namespace
 
 
 
-std::vector<std::pair<Tag, hoi4::Role>> hoi4::CreateStories(const std::map<std::string, hoi4::Role>& roles,
+std::map<Tag, std::vector<hoi4::Role>> hoi4::CreateStories(const std::map<std::string, hoi4::Role>& roles,
+    const hoi4::World& world,
     const std::map<std::string, hoi4::Country>& countries)
 {
    Log(LogLevel::Info) << "Writing stories";
-   return MakeCombinations(roles, countries)
+   return MakeCombinations(roles, world, countries)
        .and_then([roles](std::vector<std::pair<Tag, CombinationName>> combinations) {
           return SortCombinations(combinations, roles);
        })
@@ -177,5 +183,8 @@ std::vector<std::pair<Tag, hoi4::Role>> hoi4::CreateStories(const std::map<std::
        .and_then([roles](std::vector<std::pair<Tag, CombinationName>> combinations) {
           return ExpandCombinations(combinations, roles);
        })
-       .value_or(std::vector<std::pair<Tag, Role>>{});
+       .and_then([](std::vector<std::pair<Tag, hoi4::Role>> combinations) {
+          return GroupCombinations(combinations);
+       })
+       .value_or(std::map<Tag, std::vector<hoi4::Role>>{});
 }

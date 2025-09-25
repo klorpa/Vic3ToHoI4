@@ -1,8 +1,9 @@
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <optional>
 
-#include "external/commonItems/ModLoader/ModFilesystem.h"
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/maps/map_data.h"
 #include "src/maps/map_data_importer.h"
 
@@ -86,15 +87,15 @@ TEST_F(MapsMapdata, SpecifiedBordersCanBeLookedUp)
    // Bordering provinces
    const auto border_point = map_data.GetSpecifiedBorderCenter("1", "3");
    ASSERT_TRUE(border_point);
-   constexpr Point expected_point{13, 591};  // y-axis is from the bottom
-   EXPECT_EQ(*border_point, expected_point);
+   constexpr Point kExpectedPoint{.x = 13, .y = 591};  // y-axis is from the bottom
+   EXPECT_EQ(*border_point, kExpectedPoint);
 
    // Impassable border for bordering provinces
    const auto impassable_border_point = map_data.GetSpecifiedBorderCenter("6", "7");
    ASSERT_TRUE(impassable_border_point);
 
-   constexpr Point expected_impassable_point{44, 586};  // y-axis is from the bottom
-   EXPECT_EQ(*impassable_border_point, expected_impassable_point);
+   constexpr Point kExpectedImpassablePoint{.x = 44, .y = 586};  // y-axis is from the bottom
+   EXPECT_EQ(*impassable_border_point, kExpectedImpassablePoint);
 }
 
 
@@ -107,8 +108,8 @@ TEST_F(MapsMapdata, AnyBordersCanBeLookedUp)
    const auto border_point = map_data.GetAnyBorderCenter("3");
    ASSERT_TRUE(border_point);
 
-   constexpr Point expected_point{13, 590};  // y-axis is from the bottom
-   EXPECT_EQ(*border_point, expected_point);
+   constexpr Point kExpectedPoint{.x = 13, .y = 590};  // y-axis is from the bottom
+   EXPECT_EQ(*border_point, kExpectedPoint);
 }
 
 
@@ -133,7 +134,7 @@ TEST_F(MapsMapdata, ProvinceNamesCanBeLookedUp)
    EXPECT_EQ(map_data.GetProvinceName({0, 0}), std::nullopt);  // undefined points
 
    // defined points
-   const auto province_name = map_data.GetProvinceName({13, 595});
+   const auto province_name = map_data.GetProvinceName({.x = 13, .y = 595});
    ASSERT_TRUE(province_name);
    EXPECT_EQ(*province_name, "1");
 }
@@ -144,11 +145,11 @@ TEST_F(MapsMapdata, ProvincePointsCanBeLookedUp)
    EXPECT_EQ(map_data.GetProvincePoints("42"), std::nullopt);  // undefined province
 
    // defined province
-   const auto provincePoints = map_data.GetProvincePoints("1");
-   ASSERT_TRUE(provincePoints);
+   const auto province_points = map_data.GetProvincePoints("1");
+   ASSERT_TRUE(province_points);
 
-   constexpr Point expected_point{13, 595};
-   EXPECT_EQ(provincePoints->GetCentermostPoint(), expected_point);
+   constexpr Point kExpectedPoint{.x = 13, .y = 595};
+   EXPECT_EQ(province_points.value_or(ProvincePoints{}).GetCentermostPoint(), kExpectedPoint);
 }
 
 }  // namespace maps

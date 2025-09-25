@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/buildings/buildings.h"
 
 
@@ -138,7 +139,10 @@ TEST(Vic3WorldBuildingsBuildingsTests, StateBuildingIsReturned)
 
    EXPECT_FALSE(buildings.GetBuildingInState(1, "barracks").has_value());
    EXPECT_TRUE(buildings.GetBuildingInState(2, "barracks").has_value());
-   EXPECT_NEAR(buildings.GetBuildingInState(2, "barracks")->GetGoodsSalesValues(), 0.25F, 0.001F);
+   EXPECT_NEAR(
+       buildings.GetBuildingInState(2, "barracks").value_or(Building("", std::nullopt, 0.0F)).GetGoodsSalesValues(),
+       0.25F,
+       0.001F);
 }
 
 

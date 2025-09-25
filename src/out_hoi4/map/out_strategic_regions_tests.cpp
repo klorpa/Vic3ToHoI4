@@ -1,31 +1,29 @@
+#include <external/commonItems/OSCompatibilityLayer.h>
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+#include <external/fmt/include/fmt/format.h>
+
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 
-#include "external/commonItems/OSCompatibilityLayer.h"
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
-#include "external/fmt/include/fmt/format.h"
 #include "src/hoi4_world/map/strategic_regions.h"
 #include "src/out_hoi4/map/out_strategic_regions.h"
+
+
+
+using std::filesystem::create_directories;
+using std::filesystem::remove_all;
 
 
 
 namespace out
 {
 
-
-TEST(Outhoi4MapStrategicregionsTests, ExceptionForBadPath)
-{
-   EXPECT_THROW(OutputStrategicRegions("ExceptionForBadPath", hoi4::StrategicRegions()), std::runtime_error);
-}
-
-
 TEST(Outhoi4MapStrategicregionsTests, FolderIsCreated)
 {
-   commonItems::TryCreateFolder("output");
-   commonItems::TryCreateFolder("output/FolderIsCreated");
-   commonItems::TryCreateFolder("output/FolderIsCreated/map");
+   remove_all("output/FolderIsCreated/map");
+   create_directories("output/FolderIsCreated/map");
 
    const hoi4::StrategicRegions strategic_regions;
 
@@ -37,9 +35,8 @@ TEST(Outhoi4MapStrategicregionsTests, FolderIsCreated)
 
 TEST(Outhoi4MapStrategicregionsTests, StrategicRegionsAreOutput)
 {
-   commonItems::TryCreateFolder("output");
-   commonItems::TryCreateFolder("output/StrategicRegionsAreOutput");
-   commonItems::TryCreateFolder("output/StrategicRegionsAreOutput/map");
+   remove_all("output/StrategicRegionsAreOutput/map");
+   create_directories("output/StrategicRegionsAreOutput/map");
 
    const hoi4::StrategicRegions strategic_regions(
        {.strategic_regions = {{1, hoi4::StrategicRegion({.filename = "strategic_region_one.txt", .id = 1})},

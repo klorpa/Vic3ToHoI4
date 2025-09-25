@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/states/vic3_state_importer.h"
 
 
@@ -19,6 +20,7 @@ TEST(Vic3worldStateVic3stateimporter, DefaultsAreDefaulted)
    EXPECT_FALSE(state.IsIncorporated());
    EXPECT_NEAR(state.GetInfrastructure(), 0.0F, 0.0001F);
    EXPECT_TRUE(state.GetProvinces().empty());
+   EXPECT_TRUE(state.GetRegion().empty());
    EXPECT_EQ(state.GetPopulation(), 0);
    EXPECT_EQ(state.GetEmployedPopulation(), 0);
 }
@@ -41,12 +43,13 @@ TEST(Vic3worldStateVic3stateimporter, ItemsCanBeInput)
 {
    std::stringstream input;
    input << "={\n";
-   input << "\tcountry=42\n";
+   input << "\tcountry=3019898882\n";
    input << "\tincorporation = 1\n";
    input << "\tinfrastructure = 123.45\n";
    input << "\tprovinces={\n";
    input << "\t\tprovinces = { 37330 1 37333 9 37348 1 }\n";
    input << "\t}";
+   input << "\tregion=\"TEST_REGION\"\n";
    input << "\tpop_statistics={\n";
    input << "\t\tpopulation_lower_strata=2\n";
    input << "\t\tpopulation_middle_strata=4\n";
@@ -61,7 +64,7 @@ TEST(Vic3worldStateVic3stateimporter, ItemsCanBeInput)
    input << "}";
    const auto state = StateImporter{}.ImportState("0", input);
 
-   EXPECT_EQ(state.GetOwnerNumber(), 42);
+   EXPECT_EQ(state.GetOwnerNumber(), -1275068414);
    EXPECT_FALSE(state.GetOwnerTag().has_value());
    EXPECT_TRUE(state.IsIncorporated());
    EXPECT_NEAR(state.GetInfrastructure(), 123.45F, 0.0001F);
@@ -80,6 +83,7 @@ TEST(Vic3worldStateVic3stateimporter, ItemsCanBeInput)
            37342,
            37348,
            37349));
+   EXPECT_EQ(state.GetRegion(), "TEST_REGION");
    EXPECT_EQ(state.GetPopulation(), 12);
    EXPECT_EQ(state.GetEmployedPopulation(), 68);
 }

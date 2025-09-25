@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/institutions/institutions_importer.h"
 
 
@@ -35,7 +36,7 @@ TEST(Vic3WorldInstitutionsInstitutionsImporter, InstitutionsCanBeImported)
    input << "}\n";
    input << "2 = {\n";
    input << "\tinstitution=institution_colonial_affairs	investment=4\n";
-   input << "\tcountry=197\n";
+   input << "\tcountry=3019898882\n";
    input << "}\n";
    input << "\t}\n";
    input << "}\n";
@@ -49,7 +50,7 @@ TEST(Vic3WorldInstitutionsInstitutionsImporter, InstitutionsCanBeImported)
    EXPECT_THAT(institutions,
        testing::UnorderedElementsAre(
            testing::Pair(38, std::vector<Institution>{{"institution_schools", 38, 3}, {"institution_police", 38, 1}}),
-           testing::Pair(197, std::vector<Institution>{{"institution_colonial_affairs", 197, 4}})));
+           testing::Pair(-1275068414, std::vector<Institution>{{"institution_colonial_affairs", -1275068414, 4}})));
 }
 
 }  // namespace vic3

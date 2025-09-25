@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/hoi4_world/map/strategic_region.h"
 #include "src/hoi4_world/map/strategic_region_importer.h"
 
@@ -27,7 +28,7 @@ TEST(Hoi4WorldMapStrategicRegionImporter, DefaultsAreSet)
    EXPECT_EQ(strategic_region.GetID(), 0);
    EXPECT_TRUE(strategic_region.GetName().empty());
    EXPECT_TRUE(strategic_region.GetOldProvinces().empty());
-   EXPECT_FALSE(strategic_region.hasStaticModifiers());
+   EXPECT_FALSE(strategic_region.HasStaticModifiers());
    EXPECT_TRUE(strategic_region.GetStaticModifiers().empty());
    EXPECT_FALSE(strategic_region.GetNavalTerrain().has_value());
    EXPECT_TRUE(strategic_region.GetWeather().empty());
@@ -42,12 +43,12 @@ TEST(Hoi4WorldMapStrategicRegionImporter, ItemsCanBeImported)
    EXPECT_EQ(strategic_region.GetID(), 42);
    EXPECT_EQ(strategic_region.GetName(), "STRATEGICREGION_42");
    EXPECT_THAT(strategic_region.GetOldProvinces(), testing::UnorderedElementsAre(144, 169));
-   EXPECT_TRUE(strategic_region.hasStaticModifiers());
+   EXPECT_TRUE(strategic_region.HasStaticModifiers());
    EXPECT_THAT(strategic_region.GetStaticModifiers(),
        testing::UnorderedElementsAre(testing::Pair("test_modifier", "always"),
            testing::Pair("test_modifier_two", "always")));
    ASSERT_TRUE(strategic_region.GetNavalTerrain().has_value());
-   EXPECT_EQ(strategic_region.GetNavalTerrain().value(), "test_naval_terrain");
+   EXPECT_EQ(strategic_region.GetNavalTerrain().value_or(""), "test_naval_terrain");
    EXPECT_EQ(strategic_region.GetWeather(),
        "= {\n"
        "\t\tperiod={\n"

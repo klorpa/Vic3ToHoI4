@@ -1,6 +1,9 @@
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "src/hoi4_world/world/hoi4_world_framework_builder.h"
+
+
 
 namespace hoi4
 {
@@ -221,6 +224,6 @@ TEST(Hoi4worldWorldHoi4worldFrameworkBuilder, AddCoastalProvincesWorks)
                                         .AddCoastalProvinces({{10, {30}}})
                                         .Build();
 
-   EXPECT_TRUE(world_framework.coastal_provinces.contains(10));
+   EXPECT_TRUE(world_framework.coastal_provinces.Contains(10));
 }
 }  // namespace hoi4

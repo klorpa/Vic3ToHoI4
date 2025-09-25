@@ -11,8 +11,8 @@ Documentation: https://hoi4.paradoxwikis.com/Victoria_3_to_Hearts_of_Iron_IV_con
 ----
 SUPPORTED VERSIONS
 ----
-Hoi4 - 1.14
-Vic3 - 1.3-1.6
+Hoi4 - 1.15
+Vic3 - 1.8
 
 
 ----

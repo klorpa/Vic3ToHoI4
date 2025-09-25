@@ -1,6 +1,7 @@
 // Contains tech and research tests for Country
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include "hoi4_country_converter.h"
 #include "src/hoi4_world/characters/hoi4_character.h"
 #include "src/mappers/character/culture_queue.h"
@@ -44,7 +45,7 @@ TEST(Hoi4worldCountriesCountryConverter, DecentralizedCountriesHaveTwoResearchSl
        dummy_characters,
        dummy_culture_queues);
 
-   EXPECT_EQ(country_one.value().GetStartingResearchSlots(), 2);
+   EXPECT_EQ(country_one.value_or(Country({})).GetStartingResearchSlots(), 2);
 }
 
 
@@ -80,7 +81,7 @@ TEST(Hoi4worldCountriesCountryConverter, CountriesHaveThreeResearchSlotsByDefaul
        dummy_characters,
        dummy_culture_queues);
 
-   EXPECT_EQ(country_two.value().GetStartingResearchSlots(), 3);
+   EXPECT_EQ(country_two.value_or(Country({})).GetStartingResearchSlots(), 3);
 }
 
 
@@ -116,7 +117,7 @@ TEST(Hoi4worldCountriesCountryConverter, UnrecognizedCountriesHaveTwoResearchSlo
        dummy_characters,
        dummy_culture_queues);
 
-   EXPECT_EQ(country_three.value().GetStartingResearchSlots(), 2);
+   EXPECT_EQ(country_three.value_or(Country({})).GetStartingResearchSlots(), 2);
 }
 
 
@@ -152,7 +153,7 @@ TEST(Hoi4worldCountriesCountryConverter, GreatPowersHaveFourResearchSlots)
        dummy_characters,
        dummy_culture_queues);
 
-   EXPECT_EQ(country_four.value().GetStartingResearchSlots(), 4);
+   EXPECT_EQ(country_four.value_or(Country({})).GetStartingResearchSlots(), 4);
 }
 
 }  // namespace hoi4

@@ -3,20 +3,21 @@
 
 
 
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+
 #include <map>
 #include <string>
 
-#include "external/commonItems/ModLoader/ModFilesystem.h"
-#include "src/vic3_world/states/state_region.h"
+#include "src/vic3_world/states/state_regions.h"
 
 
 
 namespace vic3
 {
 
-std::map<std::string, StateRegion> ImportStateRegions(const commonItems::ModFilesystem filesystem);
+StateRegions ImportStateRegions(const commonItems::ModFilesystem& filesystem);
 
-}
+}  // namespace vic3
 
 
 

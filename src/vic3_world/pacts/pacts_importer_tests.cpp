@@ -1,7 +1,8 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/pacts/pacts_importer.h"
 
 namespace vic3
@@ -20,7 +21,7 @@ TEST(Vic3WorldPactsPactsImporter, NoPactsOnEmptyInput)
 TEST(Vic3WorldPactsPactsImporter, PactsCanBeImported)
 {
    std::stringstream input;
-   input << R""(
+   input << R"(
 	database={
 0={
 		first=1
@@ -33,13 +34,14 @@ TEST(Vic3WorldPactsPactsImporter, PactsCanBeImported)
 		action=alliance start_date=1836.1.1
 }
 	}
-)"";
+)";
 
    const std::map<int, Pact> pacts = ImportPacts(input);
 
    EXPECT_THAT(pacts,
-       testing::UnorderedElementsAre(testing::Pair(0, Pact(1, 3, "puppet", date("1836.1.1"), std::nullopt)),
-           testing::Pair(1, Pact(3, 1, "alliance", date("1836.1.1"), std::nullopt))));
+       testing::UnorderedElementsAre(
+           testing::Pair(0, Pact(PactPartners{1, 3}, "puppet", date("1836.1.1"), std::nullopt)),
+           testing::Pair(1, Pact(PactPartners{3, 1}, "alliance", date("1836.1.1"), std::nullopt))));
 }
 
 
@@ -61,7 +63,7 @@ TEST(Vic3WorldPactsPactsImporter, PactsSetAsNoneAreSkipped)
 TEST(Vic3WorldPactsPactsImporter, PactsImportsAreLogged)
 {
    std::stringstream input;
-   input << R""(
+   input << R"(
 ={
 	database={
 0={
@@ -76,7 +78,7 @@ TEST(Vic3WorldPactsPactsImporter, PactsImportsAreLogged)
 }
 	}
 }
-)"";
+)";
    std::stringstream log;
    std::streambuf* cout_buffer = std::cout.rdbuf();
    std::cout.rdbuf(log.rdbuf());

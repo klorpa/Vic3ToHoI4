@@ -1,9 +1,12 @@
 #include "src/vic3_world/elections/elections_importer.h"
 
-#include "external/commonItems/Log.h"
-#include "external/commonItems/Parser.h"
-#include "external/commonItems/ParserHelpers.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/CommonRegexes.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/Parser.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/fmt/include/fmt/format.h>
+
+
 
 std::map<int, date> vic3::ImportElections(std::istream& input_stream)
 {
@@ -20,14 +23,14 @@ std::map<int, date> vic3::ImportElections(std::istream& input_stream)
       last_election = date(commonItems::getString(input_stream));
    });
    election_parser.registerKeyword("country", [&country_number](std::istream& input_stream) {
-      country_number = commonItems::getInt(input_stream);
+      country_number = static_cast<int>(commonItems::getULlong(input_stream));
    });
    election_parser.IgnoreUnregisteredItems();
 
    commonItems::parser database_parser;
    database_parser.registerRegex(commonItems::integerRegex,
        [&elections, &empty_elections, &democracies, &last_election, &country_number, &election_parser](
-           const std::string& number_string,
+           [[maybe_unused]] const std::string& number_string,
            std::istream& input_stream) {
           const std::string election_string = commonItems::stringOfItem(input_stream).getString();
           if (election_string.find("{") == std::string::npos)
@@ -46,6 +49,7 @@ std::map<int, date> vic3::ImportElections(std::istream& input_stream)
           {
              LOG(LogLevel::Warning)
                  << "Election without a country. Please report to the converters team and upload your save.";
+             return;
           }
 
           ++democracies;

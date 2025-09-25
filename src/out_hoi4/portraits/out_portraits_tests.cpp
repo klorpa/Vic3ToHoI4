@@ -1,19 +1,20 @@
+#include <external/commonItems/OSCompatibilityLayer.h>
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 
-#include "external/commonItems/OSCompatibilityLayer.h"
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/out_hoi4/portraits/out_portraits.h"
+
+
 
 namespace out
 {
 TEST(Outhoi4PortraitsTests, PortraitFileIsCreated)
 {
-   commonItems::TryCreateFolder("output");
-   commonItems::TryCreateFolder("output/PortraitFileIsCreated");
-   commonItems::TryCreateFolder("output/PortraitFileIsCreated/portraits");
+   std::filesystem::create_directories("output/PortraitFileIsCreated/portraits");
 
    OutputPortraits("PortraitFileIsCreated",
        {{"TAG", hoi4::Country({.tag = "TAG"})}, {"TWO", hoi4::Country({.tag = "TWO"})}});
@@ -35,6 +36,8 @@ TEST(Outhoi4PortraitsTests, PortraitFileIsCreated)
        "\t}\n"
        "\toperative = {\n"
        "\t}\n"
+       "\tscientist = {\n"
+       "\t}\n"
        "}\n"
        "TWO = {\n"
        "\tarmy = {\n"
@@ -44,6 +47,8 @@ TEST(Outhoi4PortraitsTests, PortraitFileIsCreated)
        "\tpolitical = {\n"
        "\t}\n"
        "\toperative = {\n"
+       "\t}\n"
+       "\tscientist = {\n"
        "\t}\n"
        "}\n");
 }

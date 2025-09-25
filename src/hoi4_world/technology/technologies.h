@@ -1,5 +1,5 @@
-#ifndef SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H_
-#define SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H_
+#ifndef SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H
+#define SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H
 
 
 
@@ -18,7 +18,7 @@ namespace hoi4
 class Technologies
 {
   public:
-   Technologies() {}
+   Technologies() = default;
 
    explicit Technologies(std::map<std::optional<std::string>, std::set<std::string>> technologies_by_limits):
        technologies_by_limits_(std::move(technologies_by_limits))
@@ -43,4 +43,4 @@ class Technologies
 
 
 
-#endif  // SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H_
+#endif  // SRC_HOI4WORLD_TECHNOLOGY_TECHNOLOGIES_H

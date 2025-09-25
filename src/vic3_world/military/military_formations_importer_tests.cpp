@@ -1,8 +1,9 @@
+#include <external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h>
+#include <external/commonItems/external/googletest/googletest/include/gtest/gtest.h>
+
 #include <optional>
 #include <sstream>
 
-#include "external/commonItems/external/googletest/googlemock/include/gmock/gmock-matchers.h"
-#include "external/commonItems/external/googletest/googletest/include/gtest/gtest.h"
 #include "src/vic3_world/military/military_formations_importer.h"
 
 
@@ -55,7 +56,7 @@ TEST(Vic3worldMilitaryMilitaryFormationsImporter, FormationsCanBeInput)
    input << "={\n";
    input << "\tdatabase={\n";
    input << "1234={\n";
-   input << "  country=12345\n";
+   input << "  country=3019898882\n";
    input << "  type=army\n";
    input << "  name=\"Formation Name\"\n";
    input << "  ordinal_number=2\n";
@@ -94,7 +95,7 @@ TEST(Vic3worldMilitaryMilitaryFormationsImporter, FormationsCanBeInput)
    EXPECT_THAT(military_formations,
        testing::UnorderedElementsAre(testing::Pair(1234,
                                          MilitaryFormation{
-                                             .country = 12345,
+                                             .country = -1275068414,
                                              .type = MilitaryFormationType::kArmy,
                                              .name = "Formation Name",
                                              .ordinal_number = 2,

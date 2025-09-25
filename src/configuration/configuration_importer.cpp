@@ -1,49 +1,44 @@
 #include "src/configuration/configuration_importer.h"
 
-#include "external/commonItems/CommonFunctions.h"
-#include "external/commonItems/Log.h"
-#include "external/commonItems/OSCompatibilityLayer.h"
-#include "external/commonItems/ParserHelpers.h"
-#include "external/fmt/include/fmt/format.h"
+#include <external/commonItems/CommonFunctions.h>
+#include <external/commonItems/Log.h>
+#include <external/commonItems/OSCompatibilityLayer.h>
+#include <external/commonItems/ParserHelpers.h>
+#include <external/fmt/include/fmt/format.h>
+
+
+
+using std::filesystem::path;
 
 
 
 namespace
 {
 
-std::string DetermineOutputName(std::string_view save_name)
+std::string DetermineOutputName(const path& save_name)
 {
-   std::string output_name = trimPath(std::string(save_name));
-   if (getExtension(output_name) != "v3")
+   if (save_name.extension() != ".v3")
    {
       throw std::invalid_argument("The save was not a Vic3 save. Choose a save ending in '.v3' and convert again.");
    }
 
-   output_name = trimExtension(output_name);
-
-   return output_name;
+   return save_name.stem().string();
 }
 
 }  // namespace
 
 
-configuration::Configuration configuration::ImportConfiguration(std::string_view configuration_file)
+configuration::Configuration configuration::ImportConfiguration(const path& configuration_file,
+    const commonItems::ConverterVersion& converter_version)
 {
    commonItems::parser configuration_parser;
    Configuration configuration;
 
-   configuration_parser.registerKeyword("Vic3directory", [&configuration](std::istream& stream) {
+   configuration_parser.registerKeyword("Vic3directory", [&configuration, &converter_version](std::istream& stream) {
       configuration.vic3_directory = commonItems::getString(stream);
-      if (!commonItems::DoesFolderExist(configuration.vic3_directory))
-      {
-         throw std::runtime_error(fmt::format("Victoria 3 path {} doesn't exist.", configuration.vic3_directory));
-      }
-      if (!commonItems::DoesFileExist(configuration.vic3_directory + "/binaries/victoria3.exe") &&
-          !commonItems::DoesFileExist(configuration.vic3_directory + "/binaries/victoria3"))
-      {
-         throw std::runtime_error(fmt::format("{} does not contain Victoria 3.", configuration.vic3_directory));
-      }
       Log(LogLevel::Info) << "\tVictoria 3 install path is " << configuration.vic3_directory;
+      configuration.VerifyVic3Path();
+      configuration.VerifyVic3Version(converter_version);
    });
    configuration_parser.registerKeyword("Vic3SteamModDirectory", [&configuration](std::istream& stream) {
       configuration.vic3_steam_mod_path = commonItems::getString(stream);
@@ -53,18 +48,11 @@ configuration::Configuration configuration::ImportConfiguration(std::string_view
       configuration.vic3_mod_path = commonItems::getString(stream);
       Log(LogLevel::Info) << "\tVictoria 3 mod path is " << configuration.vic3_mod_path;
    });
-   configuration_parser.registerKeyword("HoI4directory", [&configuration](std::istream& stream) {
+   configuration_parser.registerKeyword("HoI4directory", [&configuration, &converter_version](std::istream& stream) {
       configuration.hoi4_directory = commonItems::getString(stream);
-      if (!commonItems::DoesFolderExist(configuration.hoi4_directory))
-      {
-         throw std::runtime_error(fmt::format("Hearts of Iron 4 path {} doesn't exist.", configuration.hoi4_directory));
-      }
-      if (!commonItems::DoesFileExist(configuration.hoi4_directory + "/hoi4.exe") &&
-          !commonItems::DoesFileExist(configuration.hoi4_directory + "/hoi4"))
-      {
-         throw std::runtime_error(fmt::format("{} does not contain Hearts of Iron 4.", configuration.hoi4_directory));
-      }
       Log(LogLevel::Info) << "\tHearts of Iron 4 install path is " << configuration.hoi4_directory;
+      configuration.VerifyHOI4Path();
+      configuration.VerifyHOI4Version(converter_version);
    });
    configuration_parser.registerKeyword("targetGameModPath", [&configuration](std::istream& stream) {
       configuration.hoi4_mod_path = commonItems::getString(stream);
@@ -98,6 +86,17 @@ configuration::Configuration configuration::ImportConfiguration(std::string_view
       else
       {
          Log(LogLevel::Info) << "\tDynamic resources is not active";
+      }
+   });
+   configuration_parser.registerKeyword("stories_system", [&configuration](std::istream& stream) {
+      configuration.use_stories = commonItems::getString(stream) == "yes" ? UseStories::kYes : UseStories::kNo;
+      if (configuration.use_stories == UseStories::kYes)
+      {
+         Log(LogLevel::Info) << "\tStories system is active";
+      }
+      else
+      {
+         Log(LogLevel::Info) << "\tStories system is not active";
       }
    });
 

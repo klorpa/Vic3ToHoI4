@@ -31,7 +31,7 @@
 #		}
 
 # This specifically overrides the rule check as to whether or not you can guarantee other ideologies
-DIPLOMACY_GUARANTEE_ENABLE_TRIGGER_OVERRIDES_GAME = {
+DIPLOMACY_GUARANTEE_ENABLE_TRIGGER_OVERRIDES_GAME_TRIGGER = {
 	NOT = {
 		has_game_rule = {
 			rule = allow_guarantees
@@ -115,23 +115,11 @@ DIPLOMACY_RELEASE_NATION_ENABLE_TRIGGER = {
 			has_game_rule = {
 				rule = allow_release_nations
 				option = PEACE_ONLY
-			}
+		}
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_ALLOW_RELEASE_NATIONS_PEACE_ONLY_TOOLTIP
 			has_war = no
-		}
-	}
-	if = {
-		limit = {
-			has_game_rule = {
-				rule = allow_release_nations
-				option = BLOCKED
-			}
-		}
-		custom_trigger_tooltip = {
-			tooltip = RULE_ALLOW_RELEASE_NATIONS_BLOCKED_TOOLTIP
-			always = no
 		}
 	}
 }
@@ -707,94 +695,4 @@ DIPLOMACY_SEND_VOLUNTEERS_ENABLE_TRIGGER = {
 	}
 }
 
-game_weight_can_add_fascist = {
-	X00 = {
-		AND = {
-			OR = {
-				check_variable = { fascist_game_weight < democratic_game_weight }
-				check_variable = { fascist_game_weight = democratic_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { fascist_game_weight < unaligned_game_weight }
-				check_variable = { fascist_game_weight = unaligned_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { fascist_game_weight < communist_game_weight }
-				check_variable = { fascist_game_weight = communist_game_weight }
-			}
-		}
-	}
-}
 
-game_weight_can_add_democratic = {
-	X00 = {
-		AND = {
-			OR = {
-				check_variable = { democratic_game_weight < fascist_game_weight }
-				check_variable = { democratic_game_weight = fascist_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { democratic_game_weight < unaligned_game_weight }
-				check_variable = { democratic_game_weight = unaligned_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { democratic_game_weight < communist_game_weight }
-				check_variable = { democratic_game_weight = communist_game_weight }
-			}
-		}
-	}
-}
-
-game_weight_can_add_unaligned = {
-	X00 = {
-		AND = {
-			OR = {
-				check_variable = { unaligned_game_weight < fascist_game_weight }
-				check_variable = { unaligned_game_weight = fascist_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { unaligned_game_weight < democratic_game_weight }
-				check_variable = { unaligned_game_weight = democratic_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { unaligned_game_weight < communist_game_weight }
-				check_variable = { unaligned_game_weight = communist_game_weight }
-			}
-		}
-	}
-}
-
-game_weight_can_add_communist = {
-	X00 = {
-		AND = {
-			OR = {
-				check_variable = { communist_game_weight < fascist_game_weight }
-				check_variable = { communist_game_weight = fascist_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { communist_game_weight < democratic_game_weight }
-				check_variable = { communist_game_weight = democratic_game_weight }
-			}
-		}
-		AND = {
-			OR = {
-				check_variable = { communist_game_weight < unaligned_game_weight }
-				check_variable = { communist_game_weight = unaligned_game_weight }
-			}
-		}
-	}
-}

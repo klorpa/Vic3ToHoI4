@@ -1,10 +1,11 @@
 #include "src/hoi4_world/map/buildings_creator.h"
 
+#include <external/commonItems/Log.h>
+#include <external/commonItems/ModLoader/ModFilesystem.h>
+#include <external/fmt/include/fmt/format.h>
+
 #include <fstream>
 
-#include "external/commonItems/Log.h"
-#include "external/commonItems/ModLoader/ModFilesystem.h"
-#include "external/fmt/include/fmt/format.h"
 #include "src/hoi4_world/map/coastal_provinces.h"
 #include "src/hoi4_world/states/hoi4_state.h"
 
@@ -30,6 +31,14 @@ struct AllDefaultPositions
    DefaultPositions default_nuclear_reactors;
    DefaultPositions default_supply_nodes;
    DefaultPositions default_floating_harbors;
+   DefaultPositions default_rocket_sites;
+   DefaultPositions default_radar_stations;
+   DefaultPositions default_fuel_silos;
+   DefaultPositions default_special_project_facilities;
+   DefaultPositions default_landmarks;
+   DefaultPositions default_stronghold_networks;
+   DefaultPositions default_dams;
+   DefaultPositions default_locks;
 };
 
 
@@ -46,7 +55,7 @@ void ImportDefaultBuilding(const std::smatch& matches, const maps::MapData& map_
       auto connecting_sea_province = stoi(matches[7].str());
 
       if (const auto province_name = map_data.GetProvinceName(
-              {static_cast<int>(position.x_coordinate), static_cast<int>(position.z_coordinate)});
+              {.x = static_cast<int>(position.x_coordinate), .y = static_cast<int>(position.z_coordinate)});
           province_name)
       {
          int province_number = stoi(*province_name);
@@ -99,11 +108,11 @@ void ProcessLine(const std::string& line, const maps::MapData& map_data, AllDefa
       {
          ImportDefaultBuilding(matches, map_data, all_default_positions.default_industrial_complexes);
       }
-      else if (matches[2] == "naval_base")
+      else if (matches[2] == "naval_base_spawn")
       {
          ImportDefaultBuilding(matches, map_data, all_default_positions.default_naval_bases);
       }
-      else if (matches[2] == "nuclear_reactor")
+      else if (matches[2] == "nuclear_reactor_spawn")
       {
          ImportDefaultBuilding(matches, map_data, all_default_positions.default_nuclear_reactors);
       }
@@ -115,6 +124,42 @@ void ProcessLine(const std::string& line, const maps::MapData& map_data, AllDefa
       {
          ImportDefaultBuilding(matches, map_data, all_default_positions.default_synthetic_refineries);
       }
+      else if (matches[2] == "rocket_site_spawn")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_rocket_sites);
+      }
+      else if (matches[2] == "radar_station")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_radar_stations);
+      }
+      else if (matches[2] == "fuel_silo")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_fuel_silos);
+      }
+      else if (matches[2] == "special_project_facility_spawn")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_special_project_facilities);
+      }
+      else if (matches[2] == "landmark_spawn")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_landmarks);
+      }
+      else if (matches[2] == "stronghold_network")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_stronghold_networks);
+      }
+      else if (matches[2] == "dam_spawn")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_dams);
+      }
+      else if (matches[2] == "locks_spawn")
+      {
+         ImportDefaultBuilding(matches, map_data, all_default_positions.default_locks);
+      }
+      else
+      {
+         Log(LogLevel::Warning) << fmt::format("Unhandled building type: {}", matches[2].str());
+      }
    }
 }
 
@@ -124,7 +169,7 @@ AllDefaultPositions ImportDefaultBuildings(const maps::MapData& map_data,
 {
    AllDefaultPositions all_default_positions;
 
-   const auto path = mod_filesystem.GetActualFileLocation("/map/buildings.txt");
+   const auto path = mod_filesystem.GetActualFileLocation("map/buildings.txt");
    if (!path)
    {
       throw std::runtime_error("Could not find /map/buildings.txt");
@@ -133,7 +178,7 @@ AllDefaultPositions ImportDefaultBuildings(const maps::MapData& map_data,
    std::ifstream buildings_file(*path);
    if (!buildings_file.is_open())
    {
-      throw std::runtime_error(fmt::format("Could not open {}/map/buildings.txt", *path));
+      throw std::runtime_error(fmt::format("Could not open {}/map/buildings.txt", path->string()));
    }
 
    while (!buildings_file.eof())
@@ -147,6 +192,51 @@ AllDefaultPositions ImportDefaultBuildings(const maps::MapData& map_data,
 }
 
 
+int PlacePredefinedBuildings(const hoi4::State& state,
+    const DefaultPositions& default_buildings,
+    std::string_view building_type,
+    std::optional<int> number_to_place,
+    std::vector<hoi4::Building>& buildings)
+{
+   int num_placed = 0;
+   for (auto the_province: state.GetProvinces())
+   {
+      if (auto possible_building = default_buildings.find(std::make_pair(the_province, 0));
+          possible_building != default_buildings.end())
+      {
+         const int state_id = state.GetId();
+
+         const auto position = possible_building->second;
+         buildings.emplace_back(
+             hoi4::Building({.state_id = state_id, .type = std::string(building_type), .position = position}));
+         num_placed++;
+
+         if (number_to_place.has_value() && num_placed >= *number_to_place)
+         {
+            break;
+         }
+      }
+   }
+
+   return num_placed;
+}
+
+
+int PlacePredefinedBuildings(const std::vector<hoi4::State>& states,
+    const DefaultPositions& default_buildings,
+    std::string_view building_type,
+    std::vector<hoi4::Building>& buildings)
+{
+   int num_placed = 0;
+   for (const auto& state: states)
+   {
+      num_placed += PlacePredefinedBuildings(state, default_buildings, building_type, std::nullopt, buildings);
+   }
+
+   return num_placed;
+}
+
+
 void PlaceBuildingType(const std::vector<hoi4::State>& states,
     const maps::MapData& map_data,
     const DefaultPositions& default_buildings,
@@ -156,27 +246,9 @@ void PlaceBuildingType(const std::vector<hoi4::State>& states,
 {
    for (const auto& state: states)
    {
-      auto num_placed = 0;
+      auto num_placed = PlacePredefinedBuildings(state, default_buildings, building_type, number_to_place, buildings);
 
-      for (auto the_province: state.GetProvinces())
-      {
-         if (auto possible_building = default_buildings.find(std::make_pair(the_province, 0));
-             possible_building != default_buildings.end())
-         {
-            const int state_id = state.GetId();
-
-            const auto position = possible_building->second;
-            buildings.emplace_back(
-                hoi4::Building({.state_id = state_id, .type = std::string(building_type), .position = position}));
-            num_placed++;
-
-            if (num_placed >= number_to_place)
-            {
-               break;
-            }
-         }
-      }
-
+      // Place remaining buildings in each province
       for (auto province: state.GetProvinces())
       {
          if (num_placed >= number_to_place)
@@ -581,35 +653,6 @@ void PlaceSupplyNodes(const std::map<int, int>& province_to_state_id_map,
 }
 
 
-std::map<int, int> RecordAirportLocations(const maps::MapData& map_data, std::vector<hoi4::Building>& buildings)
-{
-   std::map<int, int> airport_locations;
-   for (const auto& building: buildings)
-   {
-      if (building.GetType() != "air_base")
-      {
-         continue;
-      }
-
-      const hoi4::BuildingPosition position = building.GetPosition();
-      if (const auto name = map_data.GetProvinceName(
-              {static_cast<int>(position.x_coordinate), static_cast<int>(position.z_coordinate)});
-          name)
-      {
-         try
-         {
-            airport_locations.emplace(building.GetStateId(), std::stoi(*name));
-         }
-         catch (...)
-         {
-         }
-      }
-   }
-
-   return airport_locations;
-}
-
-
 hoi4::Buildings PlaceBuildings(const hoi4::States& states,
     const hoi4::CoastalProvinces& coastal_provinces,
     const maps::MapData& map_data,
@@ -668,14 +711,38 @@ hoi4::Buildings PlaceBuildings(const hoi4::States& states,
    PlaceSupplyNodes(states.province_to_state_id_map, map_data, all_default_positions.default_supply_nodes, buildings);
    PlaceBuildingType(states.states,
        map_data,
-       all_default_positions.default_nuclear_reactors,
+       all_default_positions.default_synthetic_refineries,
        "synthetic_refinery",
        1,
        buildings);
+   PlaceBuildingType(states.states,
+       map_data,
+       all_default_positions.default_rocket_sites,
+       "rocket_site_spawn",
+       1,
+       buildings);
+   PlaceBuildingType(states.states,
+       map_data,
+       all_default_positions.default_radar_stations,
+       "radar_station",
+       1,
+       buildings);
+   PlaceBuildingType(states.states, map_data, all_default_positions.default_fuel_silos, "fuel_silo", 1, buildings);
+   PlacePredefinedBuildings(states.states,
+       all_default_positions.default_special_project_facilities,
+       "special_project_facility_spawn",
+       buildings);
+   PlacePredefinedBuildings(states.states, all_default_positions.default_landmarks, "landmark_spawn", buildings);
+   PlaceBuildingType(states.states,
+       map_data,
+       all_default_positions.default_stronghold_networks,
+       "stronghold_network",
+       1,
+       buildings);
+   PlacePredefinedBuildings(states.states, all_default_positions.default_dams, "dam_spawn", buildings);
+   PlacePredefinedBuildings(states.states, all_default_positions.default_locks, "locks_spawn", buildings);
 
-   const std::map<int, int> airport_locations = RecordAirportLocations(map_data, buildings);
-
-   return hoi4::Buildings({.buildings = buildings, .airport_locations = airport_locations});
+   return hoi4::Buildings({.buildings = buildings});
 }
 
 }  // namespace
