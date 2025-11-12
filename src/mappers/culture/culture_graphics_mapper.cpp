@@ -10,6 +10,7 @@
 
 namespace
 {
+
 mappers::PortraitPaths operator+(const mappers::PortraitPaths& lhs, const mappers::PortraitPaths& rhs)
 {
    mappers::PortraitPaths sum;
@@ -33,6 +34,7 @@ mappers::PortraitPaths operator+(const mappers::PortraitPaths& lhs, const mapper
    return sum;
 }
 
+
 mappers::GraphicsBlock operator+(const mappers::GraphicsBlock& lhs, const mappers::GraphicsBlock& rhs)
 {
    // Union two GraphicsBlocks, this is for multi-ethnic cultures
@@ -51,10 +53,13 @@ mappers::GraphicsBlock operator+(const mappers::GraphicsBlock& lhs, const mapper
    };
 }
 
-mappers::PortraitPaths ValueOr(mappers::PortraitPaths& lhs, mappers::PortraitPaths& mhs, mappers::PortraitPaths& rhs)
+mappers::PortraitPaths ValueOr(mappers::PortraitPaths& lhs,
+    mappers::PortraitPaths& m1hs,
+    mappers::PortraitPaths& m2hs,
+    mappers::PortraitPaths& rhs)
 {
    mappers::PortraitPaths paths;
-   for (const auto& side: {lhs, mhs, rhs})
+   for (const auto& side: {lhs, m1hs, m2hs, rhs})
    {
       for (const auto& [key, portraits]: side)
       {
@@ -63,6 +68,7 @@ mappers::PortraitPaths ValueOr(mappers::PortraitPaths& lhs, mappers::PortraitPat
    }
    return paths;
 }
+
 
 void EmplaceUnitGraphics(std::map<std::string, std::string>& unit_graphics, const mappers::GraphicsBlock& block)
 {
@@ -75,10 +81,14 @@ void EmplaceUnitGraphics(std::map<std::string, std::string>& unit_graphics, cons
       unit_graphics.emplace("graphical_culture_2d", block.graphical_culture_2d);
    }
 }
+
 }  // namespace
 
-mappers::GraphicsBlock mappers::CultureGraphicsMapper::MatchPrimaryCulturesToGraphics(
-    const std::set<std::string>& primary_cultures,
+
+namespace mappers
+{
+
+GraphicsBlock CultureGraphicsMapper::MatchPrimaryCulturesToGraphics(const std::set<std::string>& primary_cultures,
     const std::map<std::string, vic3::CultureDefinition>& cultures) const
 {
    GraphicsBlock graphics_block;
@@ -96,8 +106,8 @@ mappers::GraphicsBlock mappers::CultureGraphicsMapper::MatchPrimaryCulturesToGra
    return graphics_block;
 }
 
-mappers::GraphicsBlock mappers::CultureGraphicsMapper::MatchCultureToGraphics(
-    const vic3::CultureDefinition& culture_def) const
+
+GraphicsBlock CultureGraphicsMapper::MatchCultureToGraphics(const vic3::CultureDefinition& culture_def) const
 {
    // Match culture, there may be more than one match
    bool matched = false;
@@ -109,6 +119,18 @@ mappers::GraphicsBlock mappers::CultureGraphicsMapper::MatchCultureToGraphics(
       {
          matched = true;
          culture_paths = culture_paths + mapping.graphics_block.portrait_paths;
+         EmplaceUnitGraphics(unit_graphics, mapping.graphics_block);
+      }
+   }
+
+   // Fallback to match heritages, there may be more than one match
+   PortraitPaths heritage_paths;
+   for (const auto& mapping: mappings_)
+   {
+      if (mapping.heritages.contains(culture_def.GetHeritage()))
+      {
+         matched = true;
+         heritage_paths = heritage_paths + mapping.graphics_block.portrait_paths;
          EmplaceUnitGraphics(unit_graphics, mapping.graphics_block);
       }
    }
@@ -162,8 +184,57 @@ mappers::GraphicsBlock mappers::CultureGraphicsMapper::MatchCultureToGraphics(
 
    // Fill in lower blocks from higher blocks.
    return {
-       .portrait_paths = ValueOr(culture_paths, trait_paths, ethnicity_paths),
+       .portrait_paths = ValueOr(culture_paths, heritage_paths, trait_paths, ethnicity_paths),
        .graphical_culture = unit_graphics.at("graphical_culture"),
        .graphical_culture_2d = unit_graphics.at("graphical_culture_2d"),
    };
 }
+
+
+void CultureGraphicsMapper::CheckMappings(const std::map<std::string, vic3::CultureDefinition>& source_cultures) const
+{
+   for (const auto& culture: source_cultures | std::ranges::views::values)
+   {
+      bool matched = false;
+      for (const auto& mapping: mappings_)
+      {
+         if (mapping.cultures.contains(culture.GetName()))
+         {
+            matched = true;
+            break;
+         }
+
+         for (const std::string& trait: culture.GetTraits())
+         {
+            if (mapping.traits.contains(trait))
+            {
+               matched = true;
+               break;
+            }
+         }
+         if (matched)
+         {
+            break;
+         }
+         for (const std::string& ethnicity: culture.GetEthnicities())
+         {
+            if (mapping.ethnicities.contains(ethnicity))
+            {
+               matched = true;
+               break;
+            }
+         }
+         if (matched)
+         {
+            break;
+         }
+      }
+
+      if (!matched)
+      {
+         Log(LogLevel::Warning) << fmt::format("Culture: {} has no mapping.", culture.GetName());
+      }
+   }
+}
+
+}  // namespace mappers
